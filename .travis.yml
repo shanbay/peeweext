@@ -1,0 +1,12 @@
+language: python
+cache: pip
+python:
+  - "3.5"
+  - "3.6"
+install:
+  - pip install -r test-requirements.txt
+script:
+  - flake8 peeweext --exclude=*_pb2.py
+  - pytest tests
+after_success:
+  - coveralls

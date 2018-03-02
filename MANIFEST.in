@@ -1,0 +1,4 @@
+include README.md LICENSE requirements.txt
+recursive-exclude tests *
+recursive-exclude examples *
+recursive-exclude benchmark *
