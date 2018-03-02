@@ -6,7 +6,7 @@ python:
 install:
   - pip install -r test-requirements.txt
 script:
-  - flake8 peeweext --exclude=*_pb2.py
+  - flake8 peeweext
   - pytest tests
 after_success:
   - CODECLIMATE_REPO_TOKEN=4fcbb961dd78da843c233538e7a37f432e48980a600f96cbd8b2967fbc008c79 codeclimate-test-reporter
