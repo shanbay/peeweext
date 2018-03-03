@@ -1,30 +1,13 @@
-from threading import Lock
 import peewee as pw
 from playhouse.db_url import connect, register_database
 from playhouse import pool
 
+__version__ = '0.1.1'
 
-__version__ = '0.1.0'
-
-
-class cached_property:
-    """ thread safe cached property """
-
-    def __init__(self, func, name=None):
-        self.func = func
-        self.__doc__ = getattr(func, '__doc__')
-        self.name = name or func.__name__
-        self.lock = Lock()
-
-    def __get__(self, instance, cls=None):
-        with self.lock:
-            if instance is None:
-                return self
-            try:
-                return instance.__dict__[self.name]
-            except KeyError:
-                res = instance.__dict__[self.name] = self.func(instance)
-                return res
+try:
+    from sea.utils import import_string, cached_property
+except ImportError:
+    from werkzeug import import_string, cached_property
 
 
 class Peeweext:
@@ -36,7 +19,7 @@ class Peeweext:
         config = app.config.get_namespace(self.ns)
         conn_params = config.get('conn_params', {})
         self.database = connect(config['db_url'], **conn_params)
-        self.model_class = config.get('model', pw.Model)
+        self.model_class = import_string(config.get('model', 'peeweext.Model'))
 
     @cached_property
     def Model(self):
@@ -47,6 +30,10 @@ class Peeweext:
 
     def __getattr__(self, name):
         return getattr(self.database, name)
+
+
+class Model(pw.Model):
+    pass
 
 
 class SmartDatabase:
