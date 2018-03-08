@@ -7,3 +7,5 @@ codeclimate-test-reporter
 coverage>=4.0,<4.4
 flask
 sea
+psycopg2
+mysqlclient

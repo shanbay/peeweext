@@ -4,10 +4,16 @@ python:
   - "3.5"
   - "3.6"
 install:
-  - pip install -r test-requirements.txt
+  - pip install -r test-requirements.txt -U
+services:
+  - postgresql
+  - mysql
 script:
   - flake8 peeweext
   - pytest tests
+before_script:
+  - psql -c 'create database peeweext;' -U postgres
+  - mysql -u root -e 'create database peeweext;'
 after_success:
   - CODECLIMATE_REPO_TOKEN=4fcbb961dd78da843c233538e7a37f432e48980a600f96cbd8b2967fbc008c79 codeclimate-test-reporter
   - coveralls
