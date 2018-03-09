@@ -1,20 +1,20 @@
 import pytest
 from peewee import *
 
-from peeweext import SequenceModel
+from peeweext.sequence import SequenceModel
 from tests.flaskapp import pwdb
 
 db = pwdb.database
 
 
-class Category(pwdb.Model, SequenceModel):
+class Category(pwdb.Model):
     id = AutoField()
     name = CharField(max_length=45, unique=True)
 
 
 class Course(pwdb.Model, SequenceModel):
     class Meta:
-        seq_scope_field = 'category'
+        seq_scope_field_name = 'category'
 
     id = AutoField()
     category = ForeignKeyField(Category, backref='courses')
