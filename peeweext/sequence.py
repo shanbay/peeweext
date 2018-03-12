@@ -14,7 +14,7 @@ class SequenceModel(pw.Model):
             klass = self.__class__
             max_id_obj = klass.select(klass.id).order_by(-klass.id).first()
             self._sequence = max_id_obj.id + 1 if max_id_obj else 1.0
-        return super(SequenceModel, self).save(force_insert=force_insert, only=only)
+        return super(SequenceModel, self).save(force_insert, only)
 
     @property
     def sequence(self):
@@ -53,7 +53,8 @@ class SequenceModel(pw.Model):
             raise ValueError("Sequence is not proper")  # pragma no cover
         with self._meta.database.atomic('IMMEDIATE'):
             klass = self.__class__
-            current_sequence = self._sequence_query().where(klass._sequence <= self._sequence).count()
+            current_sequence = self._sequence_query().where(
+                klass._sequence <= self._sequence).count()
             if current_sequence == new_sequence:
                 return
 
@@ -78,7 +79,8 @@ class SequenceModel(pw.Model):
                     prev_seq, next_seq = prev_ins._sequence, next_ins._sequence
             else:
                 prev_seq = 0
-                next_seq = self._sequence_query().order_by(+klass._sequence).first()._sequence
+                next_seq = self._sequence_query() \
+                    .order_by(+klass._sequence).first()._sequence
 
             self._sequence = (prev_seq + next_seq) / 2
             self.save()
