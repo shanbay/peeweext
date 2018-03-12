@@ -21,13 +21,19 @@ class Course(pwdb.Model, SequenceModel):
     title = CharField(max_length=45, unique=True)
 
 
+class Book(pwdb.Model, SequenceModel):
+    pass
+
+
 @pytest.fixture
 def table():
     Category.create_table()
     Course.create_table()
+    Book.create_table()
     yield
     Category.drop_table()
     Course.drop_table()
+    Book.drop_table()
 
 
 def test_sequence(table):
@@ -58,6 +64,18 @@ def test_sequence(table):
         if c.category_id == pre_course.category_id:
             assert c.sequence > pre_course.sequence
         pre_course = c
+
+    b = Book.create()
+    assert b.sequence, 1
+    b.change_sequence(1)
+    assert b.sequence, 1
+    with pytest.raises(ValueError):
+        b.change_sequence(0)
+    with pytest.raises(ValueError):
+        b.change_sequence(2)
+    Book.create()
+    b.change_sequence(2)
+    assert b.sequence, 2
 
 
 def test_sequence_auto_loosen(table):

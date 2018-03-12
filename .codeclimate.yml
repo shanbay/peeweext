@@ -1,4 +1,8 @@
 ---
+version: "2"
+checks:
+  method-complexity:
+    enabled: false
 engines:
   fixme:
     enabled: true

@@ -51,8 +51,7 @@ class SequenceModel(pw.Model):
         """
         if new_sequence < 1:
             raise ValueError("Sequence is not proper")  # pragma no cover
-
-        with self._meta.database.transaction():
+        with self._meta.database.atomic('IMMEDIATE'):
             klass = self.__class__
             current_sequence = self._sequence_query().where(klass._sequence <= self._sequence).count()
             if current_sequence == new_sequence:
@@ -70,7 +69,8 @@ class SequenceModel(pw.Model):
 
                 if not len(instances):
                     raise ValueError("Sequence is not proper")
-                elif len(instances) == 1:
+
+                if len(instances) == 1:
                     prev_seq = instances[0]._sequence
                     next_seq = prev_seq + 1
                 else:
