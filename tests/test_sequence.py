@@ -2,7 +2,7 @@ import pytest
 from peewee import *
 
 from peeweext.sequence import SequenceModel
-from tests.flaskapp import pwdb
+from tests.flaskapp import pwdb, normal_db
 
 db = pwdb.database
 
@@ -21,8 +21,9 @@ class Course(pwdb.Model, SequenceModel):
     title = CharField(max_length=45, unique=True)
 
 
-class Book(pwdb.Model, SequenceModel):
-    pass
+class Book(SequenceModel):
+    class Meta:
+        database = normal_db
 
 
 @pytest.fixture

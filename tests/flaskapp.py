@@ -1,4 +1,6 @@
 from flask import Flask
+from playhouse import db_url
+
 from peeweext import Peeweext
 
 SECRET_KEY = 'ssshhhh'
@@ -17,3 +19,5 @@ pwmysql = Peeweext(ns='PW_MYSQL_')
 pwpgsql = Peeweext(ns='PW_PGSQL_')
 pwmysql.init_app(app)
 pwpgsql.init_app(app)
+
+normal_db = db_url.connect('sqlite:///:memory:')

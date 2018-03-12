@@ -1,9 +1,9 @@
 import peewee as pw
 
-from . import Model
+from . import SmartDatabase
 
 
-class SequenceModel(Model):
+class SequenceModel(pw.Model):
     class Meta:
         seq_scope_field_name = None
 
@@ -17,6 +17,9 @@ class SequenceModel(Model):
             max_id_obj = klass.select(klass.id).order_by(-klass.id).first()
             self.sequence = max_id_obj.id + 1 if max_id_obj else 1.0
         return super(SequenceModel, self).save(force_insert, only)
+
+    def _is_smart_database(self):
+        return isinstance(self._meta.database, SmartDatabase)
 
     def _sequence_query(self):
         """
@@ -37,6 +40,48 @@ class SequenceModel(Model):
             instance.sequence = float(index + 1)
             instance.save()
 
+    def _change_sequence(self, new_sequence):
+        with self._meta.database.atomic('IMMEDIATE'):
+            klass = self.__class__
+            current_sequence = self._sequence_query().where(
+                klass.sequence <= self.sequence).count()
+            if current_sequence == new_sequence:
+                return
+            if new_sequence > 1:
+                instances = self._sequence_query() \
+                    .order_by(+klass.sequence)
+                # frontwards
+                if current_sequence > new_sequence:
+                    start = new_sequence - 2
+                    end = new_sequence
+                # backwards
+                else:
+                    start = new_sequence - 1
+                    end = new_sequence + 1
+                instances = instances[start:end]
+                if not len(instances):
+                    raise ValueError("Sequence is not proper")
+
+                if len(instances) == 1:
+                    prev_seq = instances[0].sequence
+                    next_seq = prev_seq + 1
+                else:
+                    prev_ins, next_ins = instances
+                    prev_seq = prev_ins.sequence
+                    next_seq = next_ins.sequence
+            else:
+                prev_seq = 0
+                next_seq = self._sequence_query() \
+                    .order_by(+klass.sequence).first().sequence
+
+            self.sequence = (prev_seq + next_seq) / 2
+            self.save()
+
+            # Sequence auto loosen
+            # regenerate all sequence when precision lost
+            if abs(prev_seq - next_seq) < 0.000001:
+                self._loosen()
+
     def change_sequence(self, new_sequence):
         """
         :param new_sequence: 要排到第几个
@@ -50,44 +95,12 @@ class SequenceModel(Model):
         if new_sequence < 1:
             raise ValueError("Sequence is not proper")  # pragma no cover
 
-        with self._meta.database.connection_context():
-            with self._meta.database.atomic('IMMEDIATE'):
-                klass = self.__class__
-                current_sequence = self._sequence_query().where(
-                    klass.sequence <= self.sequence).count()
-                if current_sequence == new_sequence:
-                    return
-                if new_sequence > 1:
-                    instances = self._sequence_query() \
-                        .order_by(+klass.sequence)
-                    # frontwards
-                    if current_sequence > new_sequence:
-                        start = new_sequence - 2
-                        end = new_sequence
-                    # backwards
-                    else:
-                        start = new_sequence - 1
-                        end = new_sequence + 1
-                    instances = instances[start:end]
-                    if not len(instances):
-                        raise ValueError("Sequence is not proper")
-
-                    if len(instances) == 1:
-                        prev_seq = instances[0].sequence
-                        next_seq = prev_seq + 1
-                    else:
-                        prev_ins, next_ins = instances
-                        prev_seq = prev_ins.sequence
-                        next_seq = next_ins.sequence
-                else:
-                    prev_seq = 0
-                    next_seq = self._sequence_query() \
-                        .order_by(+klass.sequence).first().sequence
-
-                self.sequence = (prev_seq + next_seq) / 2
-                self.save()
-
-                # Sequence auto loosen
-                # regenerate all sequence when precision lost
-                if abs(prev_seq - next_seq) < 0.000001:
-                    self._loosen()
+        if self._is_smart_database():
+            with self._meta.database.connection_context():
+                self._change_sequence(new_sequence)
+        else:
+            # if is not smart database,
+            # we will not handle connection_context automatically
+            # because in this situation,
+            # the connection will be closed by change_sequence
+            self._change_sequence(new_sequence)
