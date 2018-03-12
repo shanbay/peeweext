@@ -47,41 +47,45 @@ class SequenceModel(pw.Model):
         """
         if new_sequence < 1:
             raise ValueError("Sequence is not proper")  # pragma no cover
-        with self._meta.database.atomic('IMMEDIATE'):
-            klass = self.__class__
-            current_sequence = self._sequence_query().where(
-                klass.sequence <= self.sequence).count()
-            if current_sequence == new_sequence:
-                return
 
-            # 拖到第一个时需要特殊处理
-            if new_sequence > 1:
-                instances = self._sequence_query().order_by(+klass.sequence)
-                # 从后往前拖
-                if current_sequence > new_sequence:
-                    instances = instances[new_sequence - 2:new_sequence]
-                # 从前往后拖
+        with self._meta.database.connection_context():
+            with self._meta.database.atomic('IMMEDIATE'):
+                klass = self.__class__
+                current_sequence = self._sequence_query().where(
+                    klass.sequence <= self.sequence).count()
+                if current_sequence == new_sequence:
+                    return
+                if new_sequence > 1:
+                    instances = self._sequence_query() \
+                        .order_by(+klass.sequence)
+                    # frontwards
+                    if current_sequence > new_sequence:
+                        start = new_sequence - 2
+                        end = new_sequence
+                    # backwards
+                    else:
+                        start = new_sequence - 1
+                        end = new_sequence + 1
+                    instances = instances[start:end]
+                    if not len(instances):
+                        raise ValueError("Sequence is not proper")
+
+                    if len(instances) == 1:
+                        prev_seq = instances[0].sequence
+                        next_seq = prev_seq + 1
+                    else:
+                        prev_ins, next_ins = instances
+                        prev_seq = prev_ins.sequence
+                        next_seq = next_ins.sequence
                 else:
-                    instances = instances[new_sequence - 1:new_sequence + 1]
+                    prev_seq = 0
+                    next_seq = self._sequence_query() \
+                        .order_by(+klass.sequence).first().sequence
 
-                if not len(instances):
-                    raise ValueError("Sequence is not proper")
+                self.sequence = (prev_seq + next_seq) / 2
+                self.save()
 
-                if len(instances) == 1:
-                    prev_seq = instances[0].sequence
-                    next_seq = prev_seq + 1
-                else:
-                    prev_ins, next_ins = instances
-                    prev_seq, next_seq = prev_ins.sequence, next_ins.sequence
-            else:
-                prev_seq = 0
-                next_seq = self._sequence_query() \
-                    .order_by(+klass.sequence).first().sequence
-
-            self.sequence = (prev_seq + next_seq) / 2
-            self.save()
-
-            # Sequence auto loosen
-            # 不断的除以2，会导致精度丢失，当两个对象的 sequence 差过小时，全部重拍，重新生成 sequence
-            if abs(prev_seq - next_seq) < 0.000001:
-                self._loosen()
+                # Sequence auto loosen
+                # regenerate all sequence when precision lost
+                if abs(prev_seq - next_seq) < 0.000001:
+                    self._loosen()

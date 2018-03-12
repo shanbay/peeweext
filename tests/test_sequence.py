@@ -66,6 +66,7 @@ def test_sequence(table):
         pre_course = c
 
     b = Book.create()
+    assert Book.select().count() == 1
     assert b.sequence, 1
     b.change_sequence(1)
     assert b.sequence, 1
