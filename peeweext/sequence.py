@@ -1,7 +1,9 @@
 import peewee as pw
 
+from . import Model
 
-class SequenceModel(pw.Model):
+
+class SequenceModel(Model):
     class Meta:
         seq_scope_field_name = None
 
