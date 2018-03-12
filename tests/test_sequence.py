@@ -84,7 +84,7 @@ def test_sequence_auto_loosen(table):
         Course.create(title=category.name + title, category_id=category.id)
 
     for round_ in range(50):
-        c = Course.select().order_by(-Course._sequence).first()
+        c = Course.select().order_by(-Course.sequence).first()
         c.change_sequence(new_sequence=2)
-        ac = Course.select().order_by(+Course._sequence)[1]
+        ac = Course.select().order_by(+Course.sequence)[1]
         assert ac.id == c.id
