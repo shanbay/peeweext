@@ -99,8 +99,6 @@ class SequenceModel(pw.Model):
             with self._meta.database.connection_context():
                 self._change_sequence(new_sequence)
         else:
-            # if is not smart database,
-            # we will not handle connection_context automatically
-            # because in this situation,
             # the connection will be closed by change_sequence
+            # if we use connection_context
             self._change_sequence(new_sequence)
