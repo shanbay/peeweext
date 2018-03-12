@@ -1,10 +1,10 @@
-import pendulum
 import datetime
 import peewee as pw
+import pendulum
 from blinker import signal
 from playhouse import pool, db_url
 
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 
 try:
     from sea.utils import import_string, cached_property
@@ -28,6 +28,7 @@ class Peeweext:
         class BaseModel(self.model_class):
             class Meta:
                 database = self.database
+
         return BaseModel
 
 
@@ -61,7 +62,6 @@ pre_init = signal('pre_init')
 
 
 class Model(pw.Model):
-
     created_at = DatetimeTZField(default=pendulum.utcnow)
     updated_at = DatetimeTZField(default=pendulum.utcnow)
 
@@ -95,7 +95,6 @@ pw.PostgresqlDatabase.field_types.update({'DATETIME': 'TIMESTAMPTZ'})
 
 
 class SmartDatabase:
-
     """
     if you use transaction, you must wrap it with a connection context explict:
 

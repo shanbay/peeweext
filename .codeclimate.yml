@@ -1,4 +1,13 @@
 ---
+# https://docs.codeclimate.com/docs/advanced-configuration
+version: "2"
+checks:
+  method-complexity:
+    config:
+      threshold: 15
+  method-lines:
+    config:
+      threshold: 50
 engines:
   fixme:
     enabled: true
