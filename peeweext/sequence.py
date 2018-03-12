@@ -11,12 +11,14 @@ class SequenceModel(pw.Model):
     # currently we only support a fixed column_name
     sequence = pw.DoubleField(column_name='sequence', null=True)
 
-    def save(self, force_insert=False, only=None):
-        if force_insert or not bool(self._pk):
+    def save(self, *args, **kwargs):
+        pk_value = self._pk
+        created = kwargs.get('force_insert', False) or not bool(pk_value)
+        if created:
             klass = self.__class__
             max_id_obj = klass.select(klass.id).order_by(-klass.id).first()
             self.sequence = max_id_obj.id + 1 if max_id_obj else 1.0
-        return super(SequenceModel, self).save(force_insert, only)
+        return super(SequenceModel, self).save(*args, **kwargs)
 
     def _is_smart_database(self):
         return isinstance(self._meta.database, SmartDatabase)

@@ -69,11 +69,11 @@ class Model(pw.Model):
         super().__init__(*args, **kwargs)
         pre_init.send(type(self), instance=self)
 
-    def save(self, force_insert=False, only=None):
+    def save(self, *args, **kwargs):
         pk_value = self._pk
-        created = force_insert or not bool(pk_value)
+        created = kwargs.get('force_insert', False) or not bool(pk_value)
         pre_save.send(type(self), instance=self, created=created)
-        ret = super().save(force_insert=force_insert, only=only)
+        ret = super().save(*args, **kwargs)
         post_save.send(type(self), instance=self, created=created)
         return ret
 
