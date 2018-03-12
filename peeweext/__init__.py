@@ -1,34 +1,15 @@
-import pendulum
+import json
+
 import datetime
 import peewee as pw
+import pendulum
 from blinker import signal
-from playhouse import pool, db_url
+from google.protobuf.json_format import ParseDict
+from playhouse import pool, db_url, shortcuts, dataset
+
+from .utils import cast_dict
 
 __version__ = '0.2.0'
-
-try:
-    from sea.utils import import_string, cached_property
-except ImportError:
-    from werkzeug import import_string, cached_property
-
-
-class Peeweext:
-
-    def __init__(self, ns='PW_'):
-        self.ns = ns
-
-    def init_app(self, app):
-        config = app.config.get_namespace(self.ns)
-        conn_params = config.get('conn_params', {})
-        self.database = db_url.connect(config['db_url'], **conn_params)
-        self.model_class = import_string(config.get('model', 'peeweext.Model'))
-
-    @cached_property
-    def Model(self):
-        class BaseModel(self.model_class):
-            class Meta:
-                database = self.database
-        return BaseModel
 
 
 class DatetimeTZField(pw.Field):
@@ -61,6 +42,20 @@ pre_init = signal('pre_init')
 
 
 class Model(pw.Model):
+    class Meta:
+        # see playhouse.shortcuts.model_to_dict
+        model_to_dict_config = {
+            'recurse': True,
+            'backrefs': False,
+            'only': True,
+            'exclude': True,
+            'seen': True,
+            'extra_attrs': None,
+            'fields_from_query': None,
+            'max_depth': None,
+            'manytomany': False
+        }
+        message_class = None
 
     created_at = DatetimeTZField(default=pendulum.utcnow)
     updated_at = DatetimeTZField(default=pendulum.utcnow)
@@ -83,6 +78,27 @@ class Model(pw.Model):
         post_delete.send(type(self), instance=self)
         return ret
 
+    def update_from_dict(self, data, ignore_unknown=False):
+        return shortcuts.update_model_from_dict(self, data, ignore_unknown)
+
+    def to_dict(self, default=dataset.JSONExporter.default, **kwargs):
+        default_kwargs = self._meta.serialize_config.copy()
+        default_kwargs.update(kwargs)
+        d = shortcuts.model_to_dict(self, **self._meta.default_kwargs)
+        if default:
+            d = cast_dict(d, default)
+        return d
+
+    def to_json(self, **kwargs):
+        return json.dumps(self.to_dict(), **kwargs)
+
+    def to_message(self, message_class=None, ignore_unknown_fields=False):
+        return ParseDict(
+            self.to_dict(),
+            message_class or self._meta.message_class,
+            ignore_unknown_fields
+        )
+
 
 def _touch_model(sender, instance, created):
     if issubclass(sender, Model):
@@ -95,7 +111,6 @@ pw.PostgresqlDatabase.field_types.update({'DATETIME': 'TIMESTAMPTZ'})
 
 
 class SmartDatabase:
-
     """
     if you use transaction, you must wrap it with a connection context explict:
 
