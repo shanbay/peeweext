@@ -1,24 +1,30 @@
-import peewee as pw
-
-from . import SmartDatabase
+from . import pre_save, SmartDatabase
 
 
-class SequenceModel(pw.Model):
-    class Meta:
-        seq_scope_field_name = None
+def gen_sequence(sender, instance, created):
+    if issubclass(sender, SequenceMixin) and created:
+        model = sender
+        max_id_obj = model.select(model.id).order_by(-model.id).first()
+        instance.sequence = max_id_obj.id + 1 if max_id_obj else 1.0
+
+
+pre_save.connect(gen_sequence)
+
+
+class SequenceMixin:
+    """
+    Add function for sequence support,
+    to use this feature, make sure that your model
+    has fields we need.
 
     id = pw.AutoField()
     # currently we only support a fixed column_name
-    sequence = pw.DoubleField(column_name='sequence', null=True)
+    sequence = pw.DoubleField(null=True)
 
-    def save(self, *args, **kwargs):
-        pk_value = self._pk
-        created = kwargs.get('force_insert', False) or not bool(pk_value)
-        if created:
-            klass = self.__class__
-            max_id_obj = klass.select(klass.id).order_by(-klass.id).first()
-            self.sequence = max_id_obj.id + 1 if max_id_obj else 1.0
-        return super(SequenceModel, self).save(*args, **kwargs)
+    in addition, if you base Model is not peeweext.Model,
+    you should connect the pre_save signal with `gen_sequence`
+    """
+    __seq_scope_field_name__ = None
 
     def _is_smart_database(self):
         return isinstance(self._meta.database, SmartDatabase)
@@ -29,7 +35,7 @@ class SequenceModel(pw.Model):
         """
         klass = self.__class__
         query = klass.select().where(klass.sequence.is_null(False))
-        seq_scope_field_name = self._meta.seq_scope_field_name or ''
+        seq_scope_field_name = self.__seq_scope_field_name__ or ''
         seq_scope_field = getattr(klass, seq_scope_field_name, None)
         if seq_scope_field:
             seq_scope_field_value = getattr(self, seq_scope_field_name)
