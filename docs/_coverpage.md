@@ -1,6 +1,6 @@
 # peeweext
 
-**A framework for GRPC. Powered by [Shanbay](https://www.shanbay.com)**
+**An extension for peewee. Powered by [Shanbay](https://www.shanbay.com)**
 
 [![](http://img.shields.io/travis/shanbay/peeweext.svg?style=flat-square)](https://travis-ci.org/shanbay/peeweext)
 [![Maintainability](https://api.codeclimate.com/v1/badges/774db211d37720bb2599/maintainability)](https://codeclimate.com/github/shanbay/peeweext/maintainability)
