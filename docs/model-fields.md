@@ -13,11 +13,11 @@
 
 ## Model
 
-**`peeweext.Model`**
+###`peeweext.Model`
 
-### 预设 `created_at`, `updated_at`
+**1. 预设 `created_at`, `updated_at`**
 
-### 支持信号(`blinker.Signal`)
+**2. 支持信号(`blinker.Signal`)**
 
 内建的信号包括：
 
@@ -41,3 +41,6 @@ pre_save.connect(handler)
 
 pre_save.connect(handler, sender=Note)
 ```
+
+
+###`peeweext.sequence.SequenceMixin`
