@@ -91,7 +91,7 @@ class Model(pw.Model):
     def _validate_field_choices(self):
         for name, field in self._meta.fields.items():
             if field.choices:
-                choices = list(zip(field.choices))[0]
+                choices = list(zip(*field.choices))[0]
                 if getattr(self, name) not in choices:
                     raise ValidationError(
                         'Value of field %s is invalid' % name)

@@ -11,6 +11,15 @@ db = pwdb.database
 
 
 class Note(pwdb.Model):
+    STATUS_PUBLISHED = 1
+    STATUS_UNPUBLISHED = 2
+    STATUS_CHOICES = [
+        (STATUS_PUBLISHED, 'published'),
+        (STATUS_UNPUBLISHED, 'ubpublished')
+    ]
+    status = peewee.SmallIntegerField(
+        choices=STATUS_CHOICES,
+        default=STATUS_UNPUBLISHED)
     message = peewee.TextField()
     published_at = peeweext.DatetimeTZField(null=True)
 
@@ -82,6 +91,14 @@ def test_model(table):
     n.delete_instance()
 
     assert 'post_delete' in out.getvalue()
+
+
+def test_choices(table):
+    n = Note.create(message='Hello')
+
+    with pytest.raises(peeweext.ValidationError):
+        n.status = 3
+        n.save()
 
 
 def test_mysql():
