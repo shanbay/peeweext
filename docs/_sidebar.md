@@ -1,1 +1,6 @@
 - [关于](about)
+- [安装](installation)
+- 集成
+    - [Sea](sea)
+    - [Flask](flask)
+- [扩展的Model&Field](model-fields)
