@@ -9,7 +9,32 @@ from playhouse import pool, db_url, shortcuts, dataset
 
 from .utils import cast_dict
 
-__version__ = '0.2.0'
+__version__ = '0.3.0'
+
+try:
+    from sea.utils import import_string, cached_property
+except ImportError:
+    from werkzeug import import_string, cached_property
+
+
+class Peeweext:
+
+    def __init__(self, ns='PW_'):
+        self.ns = ns
+
+    def init_app(self, app):
+        config = app.config.get_namespace(self.ns)
+        conn_params = config.get('conn_params', {})
+        self.database = db_url.connect(config['db_url'], **conn_params)
+        self.model_class = import_string(config.get('model', 'peeweext.Model'))
+
+    @cached_property
+    def Model(self):
+        class BaseModel(self.model_class):
+            class Meta:
+                database = self.database
+
+        return BaseModel
 
 
 class DatetimeTZField(pw.Field):
