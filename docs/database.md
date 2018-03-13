@@ -14,14 +14,14 @@ peeweext 提供 `Smart` 类的 database。会自动处理 connection，包括
 
 *对应的 Database URL*
 
-`mysql+smart`: `SmartMySQLDatabase`
-`postgres+smart`: `SmartPostgresqlDatabase`
-`postgresql+smart`: `SmartPostgresqlDatabase`
-`postgresext+smart`: `SmartPostgresqlExtDatabase`
-`postgresqlext+smart`: `SmartPostgresqlExtDatabase`
-`sqlite+smart`: `SmartSqliteDatabase`
-`sqliteext+smart`: `SmartSqliteExtDatabase`
-`csqliteext+smart`: `SmartCSqliteExtDatabase`
+- `mysql+smart`: `SmartMySQLDatabase`
+- `postgres+smart`: `SmartPostgresqlDatabase`
+- `postgresql+smart`: `SmartPostgresqlDatabase`
+- `postgresext+smart`: `SmartPostgresqlExtDatabase`
+- `postgresqlext+smart`: `SmartPostgresqlExtDatabase`
+- `sqlite+smart`: `SmartSqliteDatabase`
+- `sqliteext+smart`: `SmartSqliteExtDatabase`
+- `csqliteext+smart`: `SmartCSqliteExtDatabase`
 
 ## 注意点
 
