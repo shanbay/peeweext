@@ -13,7 +13,7 @@
 
 ## Model
 
-###`peeweext.Model`
+### `peeweext.Model`
 
 **1. 预设 `created_at`, `updated_at`**
 
@@ -43,4 +43,4 @@ pre_save.connect(handler, sender=Note)
 ```
 
 
-###`peeweext.sequence.SequenceMixin`
+### `peeweext.sequence.SequenceMixin`
