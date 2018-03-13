@@ -12,6 +12,10 @@ except ImportError:
     from werkzeug import import_string, cached_property
 
 
+class ValidationError(Exception):
+    pass
+
+
 class Peeweext:
 
     def __init__(self, ns='PW_'):
@@ -73,6 +77,7 @@ class Model(pw.Model):
         pk_value = self._pk
         created = kwargs.get('force_insert', False) or not bool(pk_value)
         pre_save.send(type(self), instance=self, created=created)
+        self._validate_field_choices()
         ret = super().save(*args, **kwargs)
         post_save.send(type(self), instance=self, created=created)
         return ret
@@ -82,6 +87,14 @@ class Model(pw.Model):
         ret = super().delete_instance(*args, **kwargs)
         post_delete.send(type(self), instance=self)
         return ret
+
+    def _validate_field_choices(self):
+        for name, field in self._meta.fields.items():
+            if field.choices:
+                choices = list(zip(field.choices))[0]
+                if getattr(self, name) not in choices:
+                    raise ValidationError(
+                        'Value of field %s is invalid' % name)
 
 
 def _touch_model(sender, instance, created):
