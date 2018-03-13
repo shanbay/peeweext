@@ -15,14 +15,12 @@ class SequenceMixin:
     """
     Add function for sequence support,
     to use this feature, make sure that your model
-    has fields we need.
+    should inherit from peeweext.Model
+    and has fields we need.
 
     id = pw.AutoField()
     # currently we only support a fixed column_name
     sequence = pw.DoubleField(null=True)
-
-    in addition, if you base Model is not peeweext.Model,
-    you should connect the pre_save signal with `gen_sequence`
     """
     __seq_scope_field_name__ = None
 
