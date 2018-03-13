@@ -43,18 +43,6 @@ pre_init = signal('pre_init')
 
 class Model(pw.Model):
     class Meta:
-        # see playhouse.shortcuts.model_to_dict
-        model_to_dict_config = {
-            'recurse': True,
-            'backrefs': False,
-            'only': True,
-            'exclude': True,
-            'seen': True,
-            'extra_attrs': None,
-            'fields_from_query': None,
-            'max_depth': None,
-            'manytomany': False
-        }
         message_class = None
 
     created_at = DatetimeTZField(default=pendulum.utcnow)
@@ -82,9 +70,7 @@ class Model(pw.Model):
         return shortcuts.update_model_from_dict(self, data, ignore_unknown)
 
     def to_dict(self, default=dataset.JSONExporter.default, **kwargs):
-        default_kwargs = self._meta.serialize_config.copy()
-        default_kwargs.update(kwargs)
-        d = shortcuts.model_to_dict(self, **self._meta.default_kwargs)
+        d = shortcuts.model_to_dict(model=self, **kwargs)
         if default:
             d = cast_dict(d, default)
         return d
@@ -92,11 +78,11 @@ class Model(pw.Model):
     def to_json(self, **kwargs):
         return json.dumps(self.to_dict(), **kwargs)
 
-    def to_message(self, message_class=None, ignore_unknown_fields=False):
+    def to_message(self, message_class=None, ignore_unknown=False):
         return ParseDict(
             self.to_dict(),
             message_class or self._meta.message_class,
-            ignore_unknown_fields
+            ignore_unknown
         )
 
 
