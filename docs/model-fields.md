@@ -44,3 +44,21 @@ pre_save.connect(handler, sender=Note)
 
 
 ### `peeweext.sequence.SequenceMixin`
+
+用于提供手动排序的功能
+
+使用时确保你的基类继承自 `peeweext.Model` 和 `peeweext.sequence.SequenceMixin`, 同时提供所需的两个字段
+
+当需要指定排序的范围时请指定字段**属性**的名称, 举个例子:
+
+```python
+class Course(pwdb.Model, SequenceMixin):
+    __seq_scope_field_name__ = 'category'
+
+    id = AutoField()
+    sequence = DoubleField()
+    category = ForeignKeyField(Category, backref='courses')
+    title = CharField(max_length=45, unique=True)
+```
+
+当创建一个新的对象前, 会通过信号设置一个 sequence, 当需要修改对象的 sequence 时, 请调用 `change_sequence` 方法, 任何时候都不要手动的修改 sequence 的值
