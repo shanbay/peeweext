@@ -20,7 +20,7 @@ class SequenceMixin:
 
     id = pw.AutoField()
     # currently we only support a fixed column_name
-    sequence = pw.DoubleField(null=True)
+    sequence = pw.DoubleField()
     """
     __seq_scope_field_name__ = None
 
