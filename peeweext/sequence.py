@@ -47,7 +47,7 @@ class SequenceMixin:
             instance.save()
 
     def _change_sequence(self, new_sequence):
-        with self._meta.database.atomic('IMMEDIATE'):
+        with self._meta.database.atomic():
             klass = self.__class__
             current_sequence = self._sequence_query().where(
                 klass.sequence <= self.sequence).count()
