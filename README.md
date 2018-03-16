@@ -1,4 +1,4 @@
-# [Home Page](https://shanbay.github.io/peeweext)
+# [Home Page](https://shanbay.github.io/peeweext/)
 
 [![](http://img.shields.io/travis/shanbay/peeweext.svg?style=flat-square)](https://travis-ci.org/shanbay/peeweext)
 [![Maintainability](https://api.codeclimate.com/v1/badges/774db211d37720bb2599/maintainability)](https://codeclimate.com/github/shanbay/peeweext/maintainability)

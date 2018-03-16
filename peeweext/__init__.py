@@ -4,9 +4,11 @@ import pendulum
 from blinker import signal
 from playhouse import pool, db_url
 
+
 from .validators  import ValidationError
 
-__version__ = '0.3.0'
+__version__ = '0.4.0'
+
 
 try:
     from sea.utils import import_string, cached_property
