@@ -84,23 +84,23 @@ def test_model(table):
     assert 'post_delete' in out.getvalue()
 
 
-# def test_mysql():
-#     MyNote.create_table()
-#     dt = datetime.datetime.now(
-#             tz=datetime.timezone(datetime.timedelta(hours=8)))
-#     n = MyNote(message='hello', published_at=dt)
-#     n.save()
-#     n = MyNote.get_by_id(n.id)
-#     assert n.published_at.timestamp() == dt.timestamp()
-#     MyNote.drop_table()
+def test_mysql():
+    MyNote.create_table()
+    dt = datetime.datetime.now(
+            tz=datetime.timezone(datetime.timedelta(hours=8)))
+    n = MyNote(message='hello', published_at=dt)
+    n.save()
+    n = MyNote.get_by_id(n.id)
+    assert n.published_at.timestamp() == dt.timestamp()
+    MyNote.drop_table()
 
 
-# def test_pgsql():
-#     PgNote.create_table()
-#     dt = datetime.datetime.now(
-#             tz=datetime.timezone(datetime.timedelta(hours=8)))
-#     n = PgNote(message='hello', published_at=dt)
-#     n.save()
-#     n = PgNote.get_by_id(n.id)
-#     assert n.published_at.timestamp() == dt.timestamp()
-#     PgNote.drop_table()
+def test_pgsql():
+    PgNote.create_table()
+    dt = datetime.datetime.now(
+            tz=datetime.timezone(datetime.timedelta(hours=8)))
+    n = PgNote(message='hello', published_at=dt)
+    n.save()
+    n = PgNote.get_by_id(n.id)
+    assert n.published_at.timestamp() == dt.timestamp()
+    PgNote.drop_table()
