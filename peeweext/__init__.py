@@ -4,16 +4,14 @@ import pendulum
 from blinker import signal
 from playhouse import pool, db_url
 
+from .validators  import ValidationError
+
 __version__ = '0.3.0'
 
 try:
     from sea.utils import import_string, cached_property
 except ImportError:
     from werkzeug import import_string, cached_property
-
-
-class ValidationError(Exception):
-    pass
 
 
 class Peeweext:
@@ -73,11 +71,58 @@ class Model(pw.Model):
         super().__init__(*args, **kwargs)
         pre_init.send(type(self), instance=self)
 
+    def is_valid(self):
+        """
+        Validate the data of this model.
+        :return: bool
+        """
+        return not self.errors
+
+    @property
+    def errors(self):
+        if not hasattr(self, '_errors'):
+            self.run_validation()
+        return self._errors
+
+    def run_validation(self):
+        """
+        Call the validate method and return validated data
+        """
+        self._errors = dict()
+        self.__cleaned_data__ = {}
+        self.run_validators()
+        try:
+            self.__cleaned_data__ = self.validate(self.__cleaned_data__)
+        except ValidationError as e:
+            self._errors['_general'] = e.detail
+
+    def run_validators(self):
+        for attr in self._meta.fields.keys():
+            validator_key = 'validate_{}'.format(attr)
+            value = getattr(self, attr)
+            if hasattr(self, validator_key):
+                try:
+                    self.__cleaned_data__[attr] = getattr(
+                        self, validator_key)(value)
+                except ValidationError as e:
+                    self._errors[attr] = e.detail
+                continue
+            self.__cleaned_data__[attr] = value
+
+    def validate(self, data):
+        return data
+
+    @property
+    def cleaned_data(self):
+        return self.__cleaned_data__
+
     def save(self, *args, **kwargs):
         pk_value = self._pk
         created = kwargs.get('force_insert', False) or not bool(pk_value)
         pre_save.send(type(self), instance=self, created=created)
-        self._validate_field_choices()
+        if not self.is_valid():
+            raise ValidationError(self.errors)
+        self.__data__ = self.__cleaned_data__
         ret = super().save(*args, **kwargs)
         post_save.send(type(self), instance=self, created=created)
         return ret
@@ -87,14 +132,6 @@ class Model(pw.Model):
         ret = super().delete_instance(*args, **kwargs)
         post_delete.send(type(self), instance=self)
         return ret
-
-    def _validate_field_choices(self):
-        for name, field in self._meta.fields.items():
-            if field.choices:
-                choices = list(zip(*field.choices))[0]
-                if getattr(self, name) not in choices:
-                    raise ValidationError(
-                        'Value of field %s is invalid' % name)
 
 
 def _touch_model(sender, instance, created):
