@@ -87,7 +87,7 @@ def test_model(table):
 def test_mysql():
     MyNote.create_table()
     dt = datetime.datetime.now(
-            tz=datetime.timezone(datetime.timedelta(hours=8)))
+        tz=datetime.timezone(datetime.timedelta(hours=8)))
     n = MyNote(message='hello', published_at=dt)
     n.save()
     n = MyNote.get_by_id(n.id)
@@ -98,7 +98,7 @@ def test_mysql():
 def test_pgsql():
     PgNote.create_table()
     dt = datetime.datetime.now(
-            tz=datetime.timezone(datetime.timedelta(hours=8)))
+        tz=datetime.timezone(datetime.timedelta(hours=8)))
     n = PgNote(message='hello', published_at=dt)
     n.save()
     n = PgNote.get_by_id(n.id)
