@@ -2,7 +2,7 @@ import peewee
 import json
 
 
-class JsonField(peewee.CharField):
+class JsonCharField(peewee.CharField):
     def db_value(self, value):
         return json.dumps(value)
 

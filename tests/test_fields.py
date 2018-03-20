@@ -2,7 +2,7 @@ import pytest
 from peewee import *
 
 from peeweext.sequence import SequenceMixin
-from peeweext.fields import JsonField
+from peeweext.fields import JsonCharField
 from tests.flaskapp import pwdb, normal_db
 
 db = pwdb.database
@@ -10,7 +10,7 @@ db = pwdb.database
 
 class Category(pwdb.Model):
     id = AutoField()
-    content = JsonField(default={})
+    content = JsonCharField(default={})
 
 
 @pytest.fixture
