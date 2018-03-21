@@ -5,7 +5,7 @@ import pendulum
 from blinker import signal
 from playhouse import pool, db_url
 
-__version__ = '0.4.1'
+__version__ = '0.5.0'
 
 try:
     from sea.utils import import_string, cached_property
