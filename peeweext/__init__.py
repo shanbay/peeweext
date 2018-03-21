@@ -73,6 +73,10 @@ class Model(pw.Model):
         pre_init.send(type(self), instance=self)
 
     def save(self, *args, **kwargs):
+        # validate
+        if not self.is_validated:
+            raise ValueError(str(self.errors))
+
         pk_value = self._pk
         created = kwargs.get('force_insert', False) or not bool(pk_value)
         pre_save.send(type(self), instance=self, created=created)

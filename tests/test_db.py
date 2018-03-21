@@ -55,7 +55,7 @@ def test_model(table):
     n = Note.create(message='Hello')
     updated_at = n.updated_at
 
-    with pytest.raises(peewee.IntegrityError):
+    with pytest.raises(ValueError):
         n.created_at = None
         n.save()
 
@@ -84,13 +84,17 @@ def test_model(table):
     assert 'post_delete' in out.getvalue()
 
 
-def test_validator():
+def test_validator(table):
     note = Note()
     assert not note.is_validated
     assert len(note.errors) > 0
+    with pytest.raises(ValueError):
+        note.save()
 
     note.message = 'message'
     assert note.is_validated
+    note.save()
+    assert note.message == Note.get_by_id(note.id).message
 
 
 def test_mysql():
