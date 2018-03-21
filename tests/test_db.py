@@ -5,6 +5,8 @@ import pendulum
 import datetime
 from io import StringIO
 
+from peeweext.validator import ValidateError
+
 from tests.flaskapp import pwdb, pwmysql, pwpgsql
 
 db = pwdb.database
@@ -55,7 +57,7 @@ def test_model(table):
     n = Note.create(message='Hello')
     updated_at = n.updated_at
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidateError):
         n.created_at = None
         n.save()
 
@@ -86,13 +88,11 @@ def test_model(table):
 
 def test_validator(table):
     note = Note()
-    assert not note.is_validated
-    assert len(note.errors) > 0
-    with pytest.raises(ValueError):
-        note.save()
+    with pytest.raises(ValidateError):
+        note.validate()
 
     note.message = 'message'
-    assert note.is_validated
+    note.validate()
     note.save()
     assert note.message == Note.get_by_id(note.id).message
 

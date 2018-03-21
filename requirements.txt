@@ -1,4 +1,3 @@
 peewee
-peewee-validates
 pendulum
 blinker

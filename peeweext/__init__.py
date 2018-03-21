@@ -1,10 +1,11 @@
 import datetime
 
 import peewee as pw
-import peewee_validates as pwv
 import pendulum
 from blinker import signal
 from playhouse import pool, db_url
+
+from .validator import ModelValidator
 
 __version__ = '0.4.1'
 
@@ -69,13 +70,11 @@ class Model(pw.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._validator = pwv.ModelValidator(self)
+        self._validator = ModelValidator(self)
         pre_init.send(type(self), instance=self)
 
     def save(self, *args, **kwargs):
-        # validate
-        if not self.is_validated:
-            raise ValueError(str(self.errors))
+        self.validate()
 
         pk_value = self._pk
         created = kwargs.get('force_insert', False) or not bool(pk_value)
@@ -91,15 +90,7 @@ class Model(pw.Model):
         return ret
 
     def validate(self):
-        return self._validator.validate()
-
-    @property
-    def is_validated(self):
-        return self.validate()
-
-    @property
-    def errors(self):
-        return self._validator.errors
+        self._validator.validate()
 
 
 def _touch_model(sender, instance, created):
