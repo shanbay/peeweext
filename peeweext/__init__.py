@@ -55,7 +55,7 @@ class DatetimeTZField(pw.Field):
         return value.astimezone(datetime.timezone.utc)
 
 
-class JsonCharField(pw.CharField):
+class JSONCharField(pw.CharField):
     def db_value(self, value):
         return json.dumps(value)
 

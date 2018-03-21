@@ -4,7 +4,7 @@ import peeweext
 import pendulum
 import datetime
 from io import StringIO
-from peeweext import JsonCharField
+from peeweext import JSONCharField
 
 from tests.flaskapp import pwdb, pwmysql, pwpgsql
 
@@ -28,12 +28,12 @@ class PgNote(pwpgsql.Model):
 
 class Category(pwdb.Model):
     id = peewee.AutoField()
-    content = JsonCharField(default={})
+    content = JSONCharField(default={})
 
 
 class MyCategory(pwmysql.Model):
     id = peewee.AutoField()
-    content = JsonCharField(default={})
+    content = JSONCharField(default={})
 
 
 @pytest.fixture
