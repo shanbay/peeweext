@@ -4,6 +4,7 @@ import peeweext
 import pendulum
 import datetime
 from io import StringIO
+from peeweext import JSONCharField
 
 from tests.flaskapp import pwdb, pwmysql, pwpgsql
 
@@ -23,6 +24,16 @@ class MyNote(pwmysql.Model):
 class PgNote(pwpgsql.Model):
     message = peewee.TextField()
     published_at = peeweext.DatetimeTZField(null=True)
+
+
+class Category(pwdb.Model):
+    id = peewee.AutoField()
+    content = JSONCharField(default={})
+
+
+class MyCategory(pwmysql.Model):
+    id = peewee.AutoField()
+    content = JSONCharField(default={})
 
 
 @pytest.fixture
@@ -87,7 +98,7 @@ def test_model(table):
 def test_mysql():
     MyNote.create_table()
     dt = datetime.datetime.now(
-            tz=datetime.timezone(datetime.timedelta(hours=8)))
+        tz=datetime.timezone(datetime.timedelta(hours=8)))
     n = MyNote(message='hello', published_at=dt)
     n.save()
     n = MyNote.get_by_id(n.id)
@@ -98,9 +109,53 @@ def test_mysql():
 def test_pgsql():
     PgNote.create_table()
     dt = datetime.datetime.now(
-            tz=datetime.timezone(datetime.timedelta(hours=8)))
+        tz=datetime.timezone(datetime.timedelta(hours=8)))
     n = PgNote(message='hello', published_at=dt)
     n.save()
     n = PgNote.get_by_id(n.id)
     assert n.published_at.timestamp() == dt.timestamp()
     PgNote.drop_table()
+
+
+def json_field_test(CategoryModel):
+    # Create with default value
+    default_category = CategoryModel.create()
+    assert default_category.content == {}
+
+    # Create with explicit value
+    category = CategoryModel.create(content=['one', 'two'])
+    assert category.content == ['one', 'two']
+
+    # Update by save
+    category.content = [1, 2]
+    category.save()
+    category = CategoryModel.get_by_id(category.id)
+    assert category.content == [1, 2]
+
+    # Update by update
+    CategoryModel.update(content={'data': None}).where(
+        CategoryModel.id == category.id).execute()
+    category = CategoryModel.get_by_id(category.id)
+    assert category.content == {'data': None}
+
+    # Query
+    query_category = CategoryModel.get(content={'data': None})
+    assert query_category.content == {'data': None}
+    assert query_category.id == category.id
+
+
+@pytest.fixture
+def json_field_models():
+    Category.create_table()
+    MyCategory.create_table()
+    yield
+    Category.drop_table()
+    MyCategory.drop_table()
+
+
+def test_json_field_sqlite(json_field_models):
+    json_field_test(Category)
+
+
+def test_json_field_mysql(json_field_models):
+    json_field_test(MyCategory)
