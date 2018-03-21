@@ -1,3 +1,4 @@
+import json
 import datetime
 import peewee as pw
 import pendulum
@@ -52,6 +53,14 @@ class DatetimeTZField(pw.Field):
         if isinstance(value, pendulum.Pendulum):
             value = value._datetime
         return value.astimezone(datetime.timezone.utc)
+
+
+class JsonCharField(pw.CharField):
+    def db_value(self, value):
+        return json.dumps(value)
+
+    def python_value(self, value):
+        return json.loads(value)
 
 
 pre_save = signal('pre_save')

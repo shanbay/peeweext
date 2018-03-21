@@ -4,6 +4,7 @@ import peeweext
 import pendulum
 import datetime
 from io import StringIO
+from peeweext import JsonCharField
 
 from tests.flaskapp import pwdb, pwmysql, pwpgsql
 
@@ -23,6 +24,16 @@ class MyNote(pwmysql.Model):
 class PgNote(pwpgsql.Model):
     message = peewee.TextField()
     published_at = peeweext.DatetimeTZField(null=True)
+
+
+class Category(pwdb.Model):
+    id = peewee.AutoField()
+    content = JsonCharField(default={})
+
+
+class MyCategory(pwmysql.Model):
+    id = peewee.AutoField()
+    content = JsonCharField(default={})
 
 
 @pytest.fixture
@@ -104,3 +115,46 @@ def test_pgsql():
     n = PgNote.get_by_id(n.id)
     assert n.published_at.timestamp() == dt.timestamp()
     PgNote.drop_table()
+
+
+def json_field_test(CategoryModel):
+    # Create with default value
+    default_category = CategoryModel.create()
+    assert default_category.content == {}
+
+    # Create with explicit value
+    category = CategoryModel.create(content=['one', 'two'])
+    assert category.content == ['one', 'two']
+
+    # Update by save
+    category.content = [1, 2]
+    category.save()
+    category = CategoryModel.get_by_id(category.id)
+    assert category.content == [1, 2]
+
+    # Update by update
+    CategoryModel.update(content={'data': None}).where(
+        CategoryModel.id == category.id).execute()
+    category = CategoryModel.get_by_id(category.id)
+    assert category.content == {'data': None}
+
+    # Query
+    query_category = CategoryModel.get(content={'data': None})
+    assert query_category.content == {'data': None}
+    assert query_category.id == category.id
+
+
+def test_json_field_sqlite():
+    Category.create_table()
+    try:
+        json_field_test(Category)
+    finally:
+        Category.drop_table()
+
+
+def test_json_field_mysql():
+    MyCategory.create_table()
+    try:
+        json_field_test(MyCategory)
+    finally:
+        MyCategory.drop_table()
