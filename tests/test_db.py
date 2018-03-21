@@ -84,6 +84,15 @@ def test_model(table):
     assert 'post_delete' in out.getvalue()
 
 
+def test_validator():
+    note = Note()
+    assert not note.is_validated
+    assert len(note.errors) > 0
+
+    note.message = 'message'
+    assert note.is_validated
+
+
 def test_mysql():
     MyNote.create_table()
     dt = datetime.datetime.now(

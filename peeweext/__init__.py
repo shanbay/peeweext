@@ -1,5 +1,7 @@
 import datetime
+
 import peewee as pw
+import peewee_validates as pwv
 import pendulum
 from blinker import signal
 from playhouse import pool, db_url
@@ -67,6 +69,7 @@ class Model(pw.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._validator = pwv.ModelValidator(self)
         pre_init.send(type(self), instance=self)
 
     def save(self, *args, **kwargs):
@@ -82,6 +85,17 @@ class Model(pw.Model):
         ret = super().delete_instance(*args, **kwargs)
         post_delete.send(type(self), instance=self)
         return ret
+
+    def validate(self):
+        return self._validator.validate()
+
+    @property
+    def is_validated(self):
+        return self.validate()
+
+    @property
+    def errors(self):
+        return self._validator.errors
 
 
 def _touch_model(sender, instance, created):
