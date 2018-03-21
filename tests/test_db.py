@@ -144,17 +144,18 @@ def json_field_test(CategoryModel):
     assert query_category.id == category.id
 
 
-def test_json_field_sqlite():
+@pytest.fixture
+def json_field_models():
     Category.create_table()
-    try:
-        json_field_test(Category)
-    finally:
-        Category.drop_table()
-
-
-def test_json_field_mysql():
     MyCategory.create_table()
-    try:
-        json_field_test(MyCategory)
-    finally:
-        MyCategory.drop_table()
+    yield
+    Category.drop_table()
+    MyCategory.drop_table()
+
+
+def test_json_field_sqlite(json_field_models):
+    json_field_test(Category)
+
+
+def test_json_field_mysql(json_field_models):
+    json_field_test(MyCategory)
