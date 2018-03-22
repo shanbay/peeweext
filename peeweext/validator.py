@@ -111,10 +111,9 @@ class StringValidator(BaseValidator):
 class ModelValidator:
     """Validator for peewee model.
 
-    :param model: peewee.Model
+    :param model: type(peewee.Model)
     """
     def __init__(self, model):
-        self.model = model
         self.validators = {}  # eg: {'age': IntegerField()}
         self.fields = model._meta.fields
 
@@ -125,10 +124,11 @@ class ModelValidator:
             elif field_cls is not pw.AutoField:
                 self.validators[name] = BaseValidator()
 
-    def validate(self):
+    def validate(self, model):
         """
         Validate all value in model.
 
+        :param model: peewee.Model
         :raise ValidateError
         :return: None
         """
@@ -136,7 +136,7 @@ class ModelValidator:
 
         for name, validator in self.validators.items():
             field = self.fields[name]
-            value = getattr(self.model, name)
+            value = getattr(model, name)
             # field initialization arguments
             null = getattr(field, 'null')
             choices = getattr(field, 'choices')
@@ -145,7 +145,7 @@ class ModelValidator:
                 # validate by validators
                 try:
                     validator.validate(value)
-                    setattr(self.model, name, validator.validated_value)
+                    setattr(model, name, validator.validated_value)
                 except ValidateError as e:
                     errors[name] = str(e)
             elif not null:

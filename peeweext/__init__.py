@@ -64,13 +64,30 @@ post_delete = signal('post_delete')
 pre_init = signal('pre_init')
 
 
-class Model(pw.Model):
+class ModelMeta(pw.ModelBase):
+    """Overwrite peewee`s Model meta class, provide validation."""
+    def __new__(cls, name, bases, attrs):
+        cls = super(ModelMeta, cls).__new__(cls, name, bases, attrs)
+
+        if name == pw.MODEL_BASE or bases[0].__name__ == pw.MODEL_BASE:
+            return cls
+        else:
+            # add validator
+            setattr(cls, '_validator', ModelValidator(cls))
+            return cls
+
+
+class TempModel(pw.with_metaclass(ModelMeta, pw.Model)):
+    pass
+
+
+class Model(TempModel):
     created_at = DatetimeTZField(default=pendulum.utcnow)
     updated_at = DatetimeTZField(default=pendulum.utcnow)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._validator = ModelValidator(self)
+        # self._validator = ModelValidator(self)
         pre_init.send(type(self), instance=self)
 
     def save(self, *args, **kwargs):
@@ -90,7 +107,7 @@ class Model(pw.Model):
         return ret
 
     def validate(self):
-        self._validator.validate()
+        self._validator.validate(self)
 
 
 def _touch_model(sender, instance, created):

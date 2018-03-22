@@ -40,26 +40,25 @@ def test_string():
 
 def test_model_validator():
     model = Test()
-    validator = ModelValidator(model)
+    validator = ModelValidator(Test)
 
     with pytest.raises(ValidateError):
-        validator.validate()
+        validator.validate(model)
 
     # null
     model.integer = 1
     model.integer_with_choices = 1
-    validator.validate()
+    validator.validate(model)
 
     model.integer_with_null = 1
-    validator.validate()
+    validator.validate(model)
 
     # choices
     model = Test()
     model.integer = 1
     model.integer_with_choices = 4
-    validator = ModelValidator(model)
     with pytest.raises(ValidateError):
-        validator.validate()
+        validator.validate(model)
 
     model.integer_with_choices = 2
-    validator.validate()
+    validator.validate(model)
