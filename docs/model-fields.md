@@ -2,7 +2,7 @@
 
 ## Field
 
-**`DatetimeTZField`**
+### `DatetimeTZField`
 
 相对于自带的 `Datetime` Field，`DatetimeTZField` 有如下特点：
 
@@ -10,6 +10,10 @@
 - 时间包含时区，即：
     - 返回的是 pendulum.Pendulum，自带时区
     - 赋值的 datetime 对象必须包含时区信息
+
+### `JSONCharField`
+基于 `peewee.CharField` 实现的 JSONField, 可用于存储可被 JSON 化的对象，如字符串，字典等。  
+在写入数据库时，该字段的值会被 JSON 编码成字符串；在读取数据时，数据库中的字符串值也会被 JSON 解码成 Python 的数据结构。
 
 ## Model
 

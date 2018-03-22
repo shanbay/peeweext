@@ -31,7 +31,6 @@ class Book(SequenceMixin, pwdb.Model):
     sequence = DoubleField(null=True)
 
 
-
 @pytest.fixture
 def table():
     Category.create_table()
