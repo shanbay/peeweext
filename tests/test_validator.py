@@ -15,6 +15,13 @@ def test_exclusion():
         validator(1)
 
 
+def test_inclusion():
+    validator = InclusionValidator(1, 2, 3)
+    validator(1)
+    with pytest.raises(ValidateError):
+        validator(4)
+
+
 def test_length():
     validator = LengthValidator(1, 3)
     validator('123')

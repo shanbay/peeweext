@@ -23,10 +23,16 @@ class ExclusionValidator(BaseValidator):
         self._data = args
 
     def validate(self, value):
-        for data in self._data:
-            if data == value:
-                raise ValidateError('value {:s} is equal to {:s}'.format(
-                    str(value), str(data)))
+        if value in self._data:
+            raise ValidateError('value {:s} is in {:s}'.format(
+                str(value), str(self._data)))
+
+
+class InclusionValidator(ExclusionValidator):
+    def validate(self, value):
+        if value not in self._data:
+            raise ValidateError('value {:s} is not in {:s}'.format(
+                str(value), str(self._data)))
 
 
 class LengthValidator(BaseValidator):
