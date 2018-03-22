@@ -5,7 +5,7 @@ import pendulum
 import datetime
 from io import StringIO
 
-from peeweext.validator import ValidateError
+from peeweext.validator import ValidateError, validates, ExclusionValidator
 
 from tests.flaskapp import pwdb, pwmysql, pwpgsql
 
@@ -24,6 +24,10 @@ class Note(pwdb.Model):
 class MyNote(pwmysql.Model):
     message = peewee.TextField()
     published_at = peeweext.DatetimeTZField(null=True)
+
+    @validates(ExclusionValidator('raise error'))
+    def validate_message(self, value):
+        pass
 
 
 class PgNote(pwpgsql.Model):
@@ -106,6 +110,11 @@ def test_validator(table):
     note.validate()
     note.save()
     assert note.message == Note.get_by_id(note.id).message
+    # with validates decorator
+    note = MyNote()
+    note.message = 'raise error'
+    with pytest.raises(ValidateError):
+        note.validate()
 
 
 def test_mysql():

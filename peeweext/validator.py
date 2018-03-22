@@ -1,4 +1,6 @@
 """Validator for peewee Model"""
+from collections import defaultdict
+
 import peewee as pw
 
 
@@ -59,6 +61,9 @@ class BaseValidator:
         if not validated:
             raise ValidateError(self.error_message)
 
+    def __call__(self, value, extra_value=None):
+        self.validate(value, extra_value=extra_value)
+
 
 @register(pw.IntegerField)
 class IntegerValidator(BaseValidator):
@@ -108,21 +113,88 @@ class StringValidator(BaseValidator):
             return True
 
 
+# Custom validator
+class ExclusionValidator(BaseValidator):
+    def __init__(self, *args):
+        self._data = args
+
+    def _validate(self, value, extra_value=None):
+        for data in self._data:
+            if data == value:
+                self.error_message = 'value {:s} is equal to {:s}'.format(str(value), str(data))
+                return False
+        return True
+
+
+class LengthValidator(BaseValidator):
+    def __init__(self, min_length, max_length):
+        self.min_length = min_length
+        self.max_length = max_length
+
+    def _validate(self, value, extra_value=None):
+        length = len(value)
+        if self.min_length <= length <= self.max_length:
+            return True
+        else:
+            self.error_message = 'length {:d} not in range ({:d}, {:d})'.format(
+                length, self.min_length, self.max_length)
+            return False
+
+
+class FunctionValidator(BaseValidator):
+    """Convert custom validation function to Validator object"""
+    def __init__(self, func):
+        self._func = func
+
+    def _validate(self, value, extra_value=None):
+        """Validate value by model`s method
+
+        :param value:
+        :param extra_value: peewee.Model instance
+        :return:
+        """
+        self._func(extra_value, value)
+        return True
+
+
+def validates(*args):
+    """A decorator to convert model validation method to a list of custom validators.
+
+    :param args: Validator objects
+    :return A function return list of validators
+    """
+    validators = list(args)
+
+    def decorate(func):
+        validators.append(FunctionValidator(func))
+        return validators
+
+    return decorate
+
+
 class ModelValidator:
     """Validator for peewee model.
 
     :param model: type(peewee.Model)
     """
     def __init__(self, model):
-        self.validators = {}  # eg: {'age': IntegerField()}
+        self.validators = defaultdict(list)  # eg: {'age': [IntegerField()]}
         self.fields = model._meta.fields
 
         for name, field in self.fields.items():
             field_cls = field.__class__
-            if field_cls in validator_map:  # only validate field we know
-                self.validators[name] = validator_map[field.__class__]()
+            if field_cls in validator_map:
+                self.validators[name].append(validator_map[field.__class__]())
             elif field_cls is not pw.AutoField:
-                self.validators[name] = BaseValidator()
+                self.validators[name].append(BaseValidator())
+
+    def add_validator(self, field_name, validator):
+        """Add validators.
+
+        :param field_name: str
+        :param validator: BaseValidator
+        """
+        self.validators[field_name].insert(0, validator)
 
     def validate(self, model):
         """
@@ -134,7 +206,7 @@ class ModelValidator:
         """
         errors = {}
 
-        for name, validator in self.validators.items():
+        for name, validators in self.validators.items():
             field = self.fields[name]
             value = getattr(model, name)
             # field initialization arguments
@@ -142,17 +214,20 @@ class ModelValidator:
             choices = getattr(field, 'choices')
 
             if value is not None:
-                # validate by validators
+                # validate all validators
                 try:
-                    validator.validate(value)
-                    setattr(model, name, validator.validated_value)
+                    for validator in validators:
+                        if isinstance(validator, FunctionValidator):
+                            validator(value, extra_value=model)
+                        else:
+                            validator(value)
                 except ValidateError as e:
                     errors[name] = str(e)
             elif not null:
-                raise ValidateError('{:s} have no value yet'.format(name))
+                errors[name] = '{:s} have no value yet'.format(name)
 
             if choices and value not in choices:
-                raise ValidateError('{:s}`s value {:s} not in choices: {:s}'.format(name, str(value), str(choices)))
+                errors[name] = '{:s}`s value {:s} not in choices: {:s}'.format(name, str(value), str(choices))
 
         if errors:
             raise ValidateError(str(errors))

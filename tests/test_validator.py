@@ -17,6 +17,7 @@ def test_validator_map():
 def test_integer():
     validator = IntegerValidator()
     validator.validate('1')
+    validator(1)
 
     with pytest.raises(ValidateError):
         validator.validate('sfs')
@@ -37,6 +38,20 @@ def test_string():
     validator.validate('123')
     with pytest.raises(ValidateError):
         validator.validate('1234')
+
+
+def test_exclusion():
+    validator = ExclusionValidator(1, 2, 3)
+    validator(4)
+    with pytest.raises(ValidateError):
+        validator(1)
+
+
+def test_length():
+    validator = LengthValidator(1, 3)
+    validator('123')
+    with pytest.raises(ValidateError):
+        validator('1234')
 
 
 def test_model_validator():
