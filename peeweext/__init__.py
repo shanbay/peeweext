@@ -78,42 +78,39 @@ class ModelMeta(pw.ModelBase):
     def __init__(cls, name, bases, attrs):
         """Add model validator and convert validation method to validator"""
         super().__init__(name, bases, attrs)
-        if name == pw.MODEL_BASE or bases[0].__name__ == pw.MODEL_BASE:
-            pass
-        else:
-            # create ModelValidator
-            model_validator = ModelValidator(cls)
-            setattr(cls, _MODEL_VALIDATOR_NAME, model_validator)
-            custom_validators = {}  # eg: {'field_name': `validator`}
-            # add base class`s custom validation function
-            for base in bases:
-                if base in ModelMeta.CUSTOM_VALIDATORS:
-                    custom_validators.update(ModelMeta.CUSTOM_VALIDATORS[base])
-            # add custom validator by model`s validation method
-            for k, v in attrs.items():
-                if (k.startswith(_CUSTOM_MODEL_VALIDATOR_PREFIX) and
-                        (inspect.isfunction(v) or
-                            (isinstance(v, list) and
-                             isinstance(v[0], BaseValidator)))):
-                    field_name = k.replace(_CUSTOM_MODEL_VALIDATOR_PREFIX, '')
-                    if field_name not in cls._meta.fields:
-                        continue
-                    if not isinstance(v, list):
-                        # replace method with validator
-                        v = FunctionValidator(v)
-                        setattr(cls, k, v)
-                    custom_validators[field_name] = v
+        # create ModelValidator
+        model_validator = ModelValidator(cls)
+        setattr(cls, _MODEL_VALIDATOR_NAME, model_validator)
+        custom_validators = {}  # eg: {'field_name': `validator`}
+        # add base class`s custom validation function
+        for base in bases:
+            if base in ModelMeta.CUSTOM_VALIDATORS:
+                custom_validators.update(ModelMeta.CUSTOM_VALIDATORS[base])
+        # add custom validator by model`s validation method
+        for k, v in attrs.items():
+            if (k.startswith(_CUSTOM_MODEL_VALIDATOR_PREFIX) and
+                    (inspect.isfunction(v) or
+                        (isinstance(v, list) and
+                         isinstance(v[0], BaseValidator)))):
+                field_name = k.replace(_CUSTOM_MODEL_VALIDATOR_PREFIX, '')
+                if field_name not in cls._meta.fields:
+                    continue
+                if not isinstance(v, list):
+                    # replace method with validator
+                    v = FunctionValidator(v)
+                    setattr(cls, k, v)
+                custom_validators[field_name] = v
 
-            # add all validation to ModelValidator
-            for k, v in custom_validators.items():
-                if isinstance(v, list):
-                    for i in reversed(v):
-                        model_validator.add_validator(k, i)
-                else:
-                    model_validator.add_validator(k, v)
+        # add all validation to ModelValidator
+        for k, v in custom_validators.items():
+            if isinstance(v, list):
+                for i in reversed(v):
+                    model_validator.add_validator(k, i)
+            else:
+                model_validator.add_validator(k, v)
 
-            # record to base model`s validators map
-            ModelMeta.CUSTOM_VALIDATORS[cls] = custom_validators
+        # record to base model`s validators map
+        ModelMeta.CUSTOM_VALIDATORS[cls] = custom_validators
 
 
 class Model(pw.Model, metaclass=ModelMeta):

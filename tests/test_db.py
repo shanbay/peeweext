@@ -39,6 +39,9 @@ class PgNote(pwpgsql.Model):
         if value != 'hello':
             raise ValidateError
 
+    def validate_nothing(self, value):
+        pass
+
 
 @pytest.fixture
 def table():
@@ -126,6 +129,7 @@ def test_validator(table):
     # with combination
     note = PgNote()
     assert len(note.validate_message) == 3
+    assert note.validate_nothing(1) is None
     note.message = 'raise'
     with pytest.raises(ValidateError):
         note.validate()
