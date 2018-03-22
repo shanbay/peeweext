@@ -1,5 +1,4 @@
 """Validator for peewee Model"""
-from collections import defaultdict
 
 
 class ValidateError(BaseException):
@@ -98,48 +97,3 @@ def validates(*args):
         return validators
 
     return decorate
-
-
-class ModelValidator:
-    """Validator for peewee model.
-
-    :param model: type(peewee.Model)
-    """
-    def __init__(self, model):
-        self.validators = defaultdict(list)  # eg: {'age': [IntegerField()]}
-        self.fields = model._meta.fields
-
-    def add_validator(self, field_name, validator):
-        """Add validators.
-
-        :param field_name: str
-        :param validator: BaseValidator
-        """
-        self.validators[field_name].insert(0, validator)
-
-    def validate(self, model):
-        """
-        Validate all value in model.
-
-        :param model: peewee.Model
-        :raise ValidateError
-        :return: None
-        """
-        errors = {}
-
-        for name, validators in self.validators.items():
-            value = getattr(model, name)
-
-            if value is not None:
-                # validate all validators
-                try:
-                    for validator in validators:
-                        if isinstance(validator, FunctionValidator):
-                            validator(value, extra_value=model)
-                        else:
-                            validator(value)
-                except ValidateError as e:
-                    errors[name] = str(e)
-
-        if errors:
-            raise ValidateError(str(errors))
