@@ -33,9 +33,10 @@ def test_string():
     validator.validate('123')
     validator.validate(b'123')
 
+    validator.max_length = 3
+    validator.validate('123')
     with pytest.raises(ValidateError):
-        validator.max_length = 1
-        validator.validate('123')
+        validator.validate('1234')
 
 
 def test_model_validator():

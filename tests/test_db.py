@@ -16,6 +16,10 @@ class Note(pwdb.Model):
     message = peewee.TextField()
     published_at = peeweext.DatetimeTZField(null=True)
 
+    def validate_message(self, value):
+        if value == 'raise error':
+            raise ValidateError
+
 
 class MyNote(pwmysql.Model):
     message = peewee.TextField()
@@ -88,6 +92,13 @@ def test_model(table):
 
 def test_validator(table):
     note = Note()
+    with pytest.raises(ValidateError):
+        note.validate()
+
+    with pytest.raises(ValidateError):
+        note.save()
+
+    note.message = 'raise error'
     with pytest.raises(ValidateError):
         note.validate()
 

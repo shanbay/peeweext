@@ -98,8 +98,8 @@ class StringValidator(BaseValidator):
 
     def _validate(self, value, extra_value=None):
         if self.max_length > 0:
-            value_length = len(value.decode())
-            if value_length < self.max_length:
+            value_length = len(value.encode())
+            if value_length <= self.max_length:
                 return True
             else:
                 self.error_message = 'Value`s length {:d} is big than {:d}'.format(value_length, self.max_length)

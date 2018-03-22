@@ -1,4 +1,5 @@
 import datetime
+import inspect
 
 import peewee as pw
 import pendulum
@@ -64,24 +65,52 @@ post_delete = signal('post_delete')
 pre_init = signal('pre_init')
 
 
+_MODEL_VALIDATOR_NAME = '_validator'
+_CUSTOM_MODEL_VALIDATORS = '_custom_validators'
+_CUSTOM_MODEL_VALIDATOR_PREFIX = 'validate_'
+
+
 class ModelMeta(pw.ModelBase):
     """Overwrite peewee`s Model meta class, provide validation."""
+    CUSTOM_VALIDATORS = {}   # store all model`s custom validators, eg: {`model`: {`filed_name`: `validation function`}}
+
     def __new__(cls, name, bases, attrs):
-        cls = super(ModelMeta, cls).__new__(cls, name, bases, attrs)
+        """Add validator"""
+        cls = super().__new__(cls, name, bases, attrs)
 
         if name == pw.MODEL_BASE or bases[0].__name__ == pw.MODEL_BASE:
             return cls
         else:
             # add validator
-            setattr(cls, '_validator', ModelValidator(cls))
+            setattr(cls, _MODEL_VALIDATOR_NAME, ModelValidator(cls))
             return cls
 
+    def __init__(cls, name, bases, attrs):
+        super().__init__(cls)
+        if not (name == pw.MODEL_BASE or bases[0].__name__ == pw.MODEL_BASE):
+            custom_validators = {}  # eg: {'field_name': `function`}
+            setattr(cls, _CUSTOM_MODEL_VALIDATORS, custom_validators)
+            # add custom validation function
+            for k, v in attrs.items():
+                if k.startswith(_CUSTOM_MODEL_VALIDATOR_PREFIX) and inspect.isfunction(v):
+                    field_name = k.replace(_CUSTOM_MODEL_VALIDATOR_PREFIX, '')
+                    if field_name not in cls._meta.fields:
+                        continue
+                    custom_validators[field_name] = v
+            # add base class custom validation function
+            for base in bases:
+                if base in ModelMeta.CUSTOM_VALIDATORS:
+                    custom_validators.update(ModelMeta.CUSTOM_VALIDATORS[base])
 
-class TempModel(pw.with_metaclass(ModelMeta, pw.Model)):
+            ModelMeta.CUSTOM_VALIDATORS[cls] = custom_validators
+
+
+class __TempModel(pw.with_metaclass(ModelMeta, pw.Model)):
+    """A temp model class make sure meta class working fun."""
     pass
 
 
-class Model(TempModel):
+class Model(__TempModel):
     created_at = DatetimeTZField(default=pendulum.utcnow)
     updated_at = DatetimeTZField(default=pendulum.utcnow)
 
@@ -107,7 +136,11 @@ class Model(TempModel):
         return ret
 
     def validate(self):
-        self._validator.validate(self)
+        # custom validator
+        for name, validator in getattr(self, _CUSTOM_MODEL_VALIDATORS).items():
+            validator(self, getattr(self, name))
+        # default validator
+        getattr(self, _MODEL_VALIDATOR_NAME).validate(self)
 
 
 def _touch_model(sender, instance, created):
