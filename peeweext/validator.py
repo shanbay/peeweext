@@ -6,50 +6,27 @@ class ValidateError(BaseException):
 
 
 class BaseValidator:
-    """Base validator for single peewee field"""
-    error_message = 'Validate error'
-    validated_value = None
-
-    def _validate(self, value, extra_value=None):
-        """Validate value.
-        Return False or raise exception when validate failed
-
-        :param value: value to validate
-        :param extra_value: extra value if needed
-        :return bool
-        :raise BaseException
-        """
-        return True
-
-    def validate(self, value, extra_value=None):
+    def validate(self, value):
         """Validate value.
         :param value: value to validate
-        :param extra_value: extra value if needed
         :return None
         :raise ValidateError
         """
-        # convert and validate
-        validated = self._validate(value, extra_value=extra_value)
-        # no exception but validate failed
-        if not validated:
-            raise ValidateError(self.error_message)
+        pass
 
-    def __call__(self, value, extra_value=None):
-        self.validate(value, extra_value=extra_value)
+    def __call__(self, value):
+        self.validate(value)
 
 
-# Custom validator
 class ExclusionValidator(BaseValidator):
     def __init__(self, *args):
         self._data = args
 
-    def _validate(self, value, extra_value=None):
+    def validate(self, value):
         for data in self._data:
             if data == value:
-                self.error_message = 'value {:s} is equal to {:s}'.format(
-                    str(value), str(data))
-                return False
-        return True
+                raise ValidateError('value {:s} is equal to {:s}'.format(
+                    str(value), str(data)))
 
 
 class LengthValidator(BaseValidator):
@@ -57,43 +34,27 @@ class LengthValidator(BaseValidator):
         self.min_length = min_length
         self.max_length = max_length
 
-    def _validate(self, value, extra_value=None):
+    def validate(self, value):
         length = len(value)
         if self.min_length <= length <= self.max_length:
-            return True
+            pass
         else:
-            self.error_message = 'length {:d} not in range ({:d},{:d})'.format(
-                length, self.min_length, self.max_length)
-            return False
+            raise ValidateError('length {:d} not in range ({:d},{:d})'.format(
+                length, self.min_length, self.max_length))
 
 
-class FunctionValidator(BaseValidator):
-    """Convert custom validation function to Validator object"""
-    def __init__(self, func):
-        self._func = func
-
-    def _validate(self, value, extra_value=None):
-        """Validate value by model`s method
-
-        :param value:
-        :param extra_value: peewee.Model instance
-        :return:
-        """
-        self._func(extra_value, value)
-        return True
-
-
-def validates(*args):
-    """A decorator to convert model validation method to
-    a list of custom validators.
+class validates:
+    """A decorator to store validators.
 
     :param args: Validator objects
-    :return A function return list of validators
     """
-    validators = list(args)
+    def __init__(self, *args):
+        self.validators = list(args)
 
-    def decorate(func):
-        validators.append(FunctionValidator(func))
-        return validators
+    def __call__(self, func):
+        def wrapper(instance, value):
+            for validator in self.validators:
+                validator(value)
+            return func(instance, value)
 
-    return decorate
+        return wrapper

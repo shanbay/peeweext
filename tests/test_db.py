@@ -4,6 +4,7 @@ import peeweext
 import pendulum
 import datetime
 from io import StringIO
+import inspect
 from peeweext import JSONCharField
 
 from peeweext.validator import *
@@ -41,7 +42,7 @@ class PgNote(pwpgsql.Model):
             raise ValidateError
 
     def validate_nothing(self, value):
-        pass
+        return 'nothing'
 
 
 class Category(pwdb.Model):
@@ -115,7 +116,7 @@ def test_model(table):
 
 def test_validator(table):
     note = Note()
-    assert isinstance(note.validate_message, BaseValidator)
+    assert inspect.ismethod(note.validate_message)
 
     note.message = 'raise error'
     with pytest.raises(ValidateError):
@@ -130,17 +131,15 @@ def test_validator(table):
     assert note.message == Note.get_by_id(note.id).message
     # with validates decorator
     note = MyNote()
-    assert isinstance(note.validate_message, list)
-    assert len(note.validate_message) == 2
-    assert isinstance(note.validate_message[0], BaseValidator)
+    assert inspect.ismethod(note.validate_message)
 
     note.message = 'raise error'
     with pytest.raises(ValidateError):
         note.validate()
     # with combination
     note = PgNote()
-    assert len(note.validate_message) == 3
-    assert note.validate_nothing(1) is None
+    assert inspect.ismethod(note.validate_message)
+    assert note.validate_nothing(None) == 'nothing'
     note.message = 'raise'
     with pytest.raises(ValidateError):
         note.validate()

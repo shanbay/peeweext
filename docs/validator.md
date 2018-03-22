@@ -22,8 +22,8 @@ class Note(Model):
         pass
 
 note = Note()
-print(type(note.validate_message)  # FunctionValidator
-print(type(note.validate_name))  # list of FunctionValidator
+print(type(note.validate_message)  # method
+print(type(note.validate_name))  # method
 ...
 ```
 

@@ -1,14 +1,13 @@
 import json
 import datetime
 import inspect
-from collections import defaultdict
 
 import peewee as pw
 import pendulum
 from blinker import signal
 from playhouse import pool, db_url
 
-from .validator import BaseValidator, FunctionValidator, ValidateError
+from .validator import ValidateError
 
 __version__ = '0.5.0'
 
@@ -75,34 +74,21 @@ post_delete = signal('post_delete')
 pre_init = signal('pre_init')
 
 
-_MODEL_VALIDATORS_NAME = '_validators'
-_CUSTOM_MODEL_VALIDATOR_PREFIX = 'validate_'
-
-
 class ModelMeta(pw.ModelBase):
-    """Overwrite peewee`s Model meta class, provide validation."""
+    """Model meta class, provide validation."""
 
     def __init__(cls, name, bases, attrs):
-        """Add model validator and convert validation method to validator"""
+        """Store validator."""
         super().__init__(name, bases, attrs)
-        custom_validators = defaultdict(list)  # {'field_name': [`validator`,]}
-        setattr(cls, _MODEL_VALIDATORS_NAME, custom_validators)
-        # add custom validator by model`s validation method
+        validators = {}  # {'field_name': `callable`}
+        setattr(cls, '_validators', validators)
+        # add validator by model`s validation method
         for k, v in attrs.items():
-            if (k.startswith(_CUSTOM_MODEL_VALIDATOR_PREFIX) and
-                    (inspect.isfunction(v) or
-                        (isinstance(v, list) and
-                         isinstance(v[0], BaseValidator)))):
-                field_name = k.replace(_CUSTOM_MODEL_VALIDATOR_PREFIX, '')
+            if k.startswith('validate_') and inspect.isfunction(v):
+                field_name = k.replace('validate_', '')
                 if field_name not in cls._meta.fields:
                     continue
-                if isinstance(v, list):
-                    custom_validators[field_name].extend(v)
-                else:
-                    # replace method with validator
-                    v = FunctionValidator(v)
-                    setattr(cls, k, v)
-                    custom_validators[field_name].append(v)
+                validators[field_name] = v
 
 
 class Model(pw.Model, metaclass=ModelMeta):
@@ -132,19 +118,13 @@ class Model(pw.Model, metaclass=ModelMeta):
     def validate(self):
         errors = {}
 
-        for name, validators in getattr(self, _MODEL_VALIDATORS_NAME).items():
+        for name, validator in self._validators.items():
             value = getattr(self, name)
 
-            if value is not None:
-                # validate all validators
-                try:
-                    for v in validators:
-                        if isinstance(v, FunctionValidator):
-                            v(value, extra_value=self)
-                        else:
-                            v(value)
-                except ValidateError as e:
-                    errors[name] = str(e)
+            try:
+                validator(self, value)
+            except ValidateError as e:
+                errors[name] = str(e)
 
         if errors:
             raise ValidateError(str(errors))

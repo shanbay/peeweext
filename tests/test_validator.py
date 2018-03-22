@@ -5,7 +5,7 @@ from peeweext.validator import *
 
 def test_base():
     validator = BaseValidator()
-    assert validator._validate(None)
+    assert validator.validate(None) is None
 
 
 def test_exclusion():
