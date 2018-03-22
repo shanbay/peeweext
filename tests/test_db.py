@@ -5,7 +5,7 @@ import pendulum
 import datetime
 from io import StringIO
 
-from peeweext.validator import ValidateError, validates, ExclusionValidator
+from peeweext.validator import *
 
 from tests.flaskapp import pwdb, pwmysql, pwpgsql
 
@@ -33,6 +33,11 @@ class MyNote(pwmysql.Model):
 class PgNote(pwpgsql.Model):
     message = peewee.TextField()
     published_at = peeweext.DatetimeTZField(null=True)
+
+    @validates(ExclusionValidator('raise'), LengthValidator(min_length=3, max_length=6))
+    def validate_message(self, value):
+        if value != 'hello':
+            raise ValidateError
 
 
 @pytest.fixture
@@ -65,7 +70,7 @@ def test_model(table):
     n = Note.create(message='Hello')
     updated_at = n.updated_at
 
-    with pytest.raises(ValidateError):
+    with pytest.raises(peewee.IntegrityError):
         n.created_at = None
         n.save()
 
@@ -96,15 +101,14 @@ def test_model(table):
 
 def test_validator(table):
     note = Note()
+    assert isinstance(note.validate_message, BaseValidator)
+
+    note.message = 'raise error'
     with pytest.raises(ValidateError):
         note.validate()
 
     with pytest.raises(ValidateError):
         note.save()
-
-    note.message = 'raise error'
-    with pytest.raises(ValidateError):
-        note.validate()
 
     note.message = 'message'
     note.validate()
@@ -112,9 +116,27 @@ def test_validator(table):
     assert note.message == Note.get_by_id(note.id).message
     # with validates decorator
     note = MyNote()
+    assert isinstance(note.validate_message, list)
+    assert len(note.validate_message) == 2
+    assert isinstance(note.validate_message[0], BaseValidator)
+
     note.message = 'raise error'
     with pytest.raises(ValidateError):
         note.validate()
+    # with combination
+    note = PgNote()
+    assert len(note.validate_message) == 3
+    note.message = 'raise'
+    with pytest.raises(ValidateError):
+        note.validate()
+    note.message = 'no'
+    with pytest.raises(ValidateError):
+        note.validate()
+    note.message = 'Hello'
+    with pytest.raises(ValidateError):
+        note.validate()
+    note.message = 'hello'
+    note.validate()
 
 
 def test_mysql():

@@ -1,24 +1,7 @@
 # Validator
-    针对peewee.Model的字段验证器，拥有基本字段认证和自定认证功能。
+    针对peewee.Model的字段验证器
 
 ## 使用方式
-
-### 基本认证：
-
-```
-class Test(Model):
-    integer = IntegerField()
-    integer_with_null = IntegerField(null=True)
-    integer_with_choices = IntegerField(choices=[1, 2, 3])
-
-test = Test()
-test.validate()  # raise ValidatorError
-test.integer = 's'
-test.integer_with_choices = 4
-test.validate()
-# raise
-# peeweext.validator.ValidateError: {'integer': "invalid literal for int() with base 10: 's'", 'integer_with_choices': 'integer_with_choices`s value 123 not in choices: [1, 2, 3]'}
-```
 
 ### 自定义认证方法：
 

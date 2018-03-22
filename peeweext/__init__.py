@@ -8,7 +8,7 @@ from playhouse import pool, db_url
 
 from .validator import ModelValidator, BaseValidator, FunctionValidator
 
-__version__ = '0.4.1'
+__version__ = '0.5.0'
 
 try:
     from sea.utils import import_string, cached_property
@@ -71,34 +71,37 @@ _CUSTOM_MODEL_VALIDATOR_PREFIX = 'validate_'
 
 class ModelMeta(pw.ModelBase):
     """Overwrite peewee`s Model meta class, provide validation."""
-    CUSTOM_VALIDATORS = {}   # store all model`s custom validators, eg: {`model`: {`filed_name`: `validation function`}}
+    # store all model`s custom validators,
+    # eg: {`model`: {`filed_name`: `validator`}}
+    CUSTOM_VALIDATORS = {}
 
-    def __new__(cls, name, bases, attrs):
+    def __init__(cls, name, bases, attrs):
         """Add model validator and convert validation method to validator"""
-        cls = super().__new__(cls, name, bases, attrs)
-
+        super().__init__(name, bases, attrs)
         if name == pw.MODEL_BASE or bases[0].__name__ == pw.MODEL_BASE:
-            return cls
+            pass
         else:
             # create ModelValidator
             model_validator = ModelValidator(cls)
             setattr(cls, _MODEL_VALIDATOR_NAME, model_validator)
-            # add custom validator by model`s validation method
             custom_validators = {}  # eg: {'field_name': `validator`}
             # add base class`s custom validation function
             for base in bases:
                 if base in ModelMeta.CUSTOM_VALIDATORS:
                     custom_validators.update(ModelMeta.CUSTOM_VALIDATORS[base])
+            # add custom validator by model`s validation method
             for k, v in attrs.items():
-                if k.startswith(_CUSTOM_MODEL_VALIDATOR_PREFIX) and (
-                        inspect.isfunction(v) or (isinstance(v, list) and isinstance(v[0], BaseValidator))):
+                if (k.startswith(_CUSTOM_MODEL_VALIDATOR_PREFIX) and
+                        (inspect.isfunction(v) or
+                            (isinstance(v, list) and
+                             isinstance(v[0], BaseValidator)))):
                     field_name = k.replace(_CUSTOM_MODEL_VALIDATOR_PREFIX, '')
                     if field_name not in cls._meta.fields:
                         continue
                     if not isinstance(v, list):
-                        v = FunctionValidator(v)
                         # replace method with validator
-                        setattr(cls, k, validator)
+                        v = FunctionValidator(v)
+                        setattr(cls, k, v)
                     custom_validators[field_name] = v
 
             # add all validation to ModelValidator
@@ -109,22 +112,16 @@ class ModelMeta(pw.ModelBase):
                 else:
                     model_validator.add_validator(k, v)
 
+            # record to base model`s validators map
             ModelMeta.CUSTOM_VALIDATORS[cls] = custom_validators
-            return cls
 
 
-class __TempModel(pw.with_metaclass(ModelMeta, pw.Model)):
-    """A temp model class make sure meta class working fun."""
-    pass
-
-
-class Model(__TempModel):
+class Model(pw.Model, metaclass=ModelMeta):
     created_at = DatetimeTZField(default=pendulum.utcnow)
     updated_at = DatetimeTZField(default=pendulum.utcnow)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # self._validator = ModelValidator(self)
         pre_init.send(type(self), instance=self)
 
     def save(self, *args, **kwargs):
