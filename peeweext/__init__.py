@@ -140,10 +140,7 @@ class Model(pw.Model, metaclass=ModelMeta):
 
     @property
     def is_valid(self):
-        if self.errors:
-            return False
-        else:
-            return True
+        return not self.errors
 
 
 def _touch_model(sender, instance, created):
