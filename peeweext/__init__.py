@@ -85,7 +85,7 @@ class ModelMeta(pw.ModelBase):
         # add validator by model`s validation method
         for k, v in attrs.items():
             if k.startswith('validate_') and inspect.isfunction(v):
-                field_name = k.replace('validate_', '')
+                field_name = k[9:]  # 9 = len('validate_')
                 if field_name not in cls._meta.fields:
                     continue
                 validators[field_name] = v
