@@ -1,4 +1,5 @@
 """Validator for peewee Model"""
+import re
 
 
 class ValidateError(BaseException):
@@ -33,6 +34,21 @@ class InclusionValidator(ExclusionValidator):
         if value not in self._data:
             raise ValidateError('value {:s} is not in {:s}'.format(
                 str(value), str(self._data)))
+
+
+class RegexValidator(BaseValidator):
+    def __init__(self, regex):
+        self._regex = regex
+        self._compiled_regex = re.compile(regex)
+
+    def validate(self, value):
+        """Validate string by regex
+        :param value: str
+        :return:
+        """
+        if not self._compiled_regex.match(value):
+            raise ValidateError(
+                'value {:s} not match r"{:s}"'.format(value, self._regex))
 
 
 class LengthValidator(BaseValidator):

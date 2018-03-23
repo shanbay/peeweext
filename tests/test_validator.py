@@ -27,3 +27,10 @@ def test_length():
     validator('123')
     with pytest.raises(ValidateError):
         validator('1234')
+
+
+def test_regex():
+    validator = RegexValidator('[a-z]+')
+    validator.validate('xyz')
+    with pytest.raises(ValidateError):
+        validator('Xyz')
