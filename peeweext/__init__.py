@@ -9,7 +9,7 @@ from playhouse import pool, db_url
 
 from .validator import ValidateError
 
-__version__ = '0.5.0'
+__version__ = '0.6.0'
 
 try:
     from sea.utils import import_string, cached_property
