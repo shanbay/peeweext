@@ -98,9 +98,12 @@ class Model(pw.Model, metaclass=ModelMeta):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         pre_init.send(type(self), instance=self)
+        self._validate_errors = {}  # eg: {'field_name': 'error information'}
 
-    def save(self, *args, **kwargs):
-        self.validate()
+    def save(self, *args, skip_validation=False, **kwargs):
+        if not skip_validation:
+            if not self.is_valid:
+                raise ValidateError(str(self._validate_errors))
 
         pk_value = self._pk
         created = kwargs.get('force_insert', False) or not bool(pk_value)
@@ -115,7 +118,9 @@ class Model(pw.Model, metaclass=ModelMeta):
         post_delete.send(type(self), instance=self)
         return ret
 
-    def validate(self):
+    def _validate(self):
+        """Validate model data and save errors
+        """
         errors = {}
 
         for name, validator in self._validators.items():
@@ -126,8 +131,19 @@ class Model(pw.Model, metaclass=ModelMeta):
             except ValidateError as e:
                 errors[name] = str(e)
 
-        if errors:
-            raise ValidateError(str(errors))
+        self._validate_errors = errors
+
+    @property
+    def errors(self):
+        self._validate()
+        return self._validate_errors
+
+    @property
+    def is_valid(self):
+        if self.errors:
+            return False
+        else:
+            return True
 
 
 def _touch_model(sender, instance, created):

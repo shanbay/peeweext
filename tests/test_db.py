@@ -58,8 +58,12 @@ class MyCategory(pwmysql.Model):
 @pytest.fixture
 def table():
     Note.create_table()
+    PgNote.create_table()
+    MyNote.create_table()
     yield
     Note.drop_table()
+    PgNote.drop_table()
+    MyNote.drop_table()
 
 
 def test_db(table):
@@ -119,14 +123,14 @@ def test_validator(table):
     assert inspect.ismethod(note.validate_message)
 
     note.message = 'raise error'
-    with pytest.raises(ValidateError):
-        note.validate()
-
+    assert not note.is_valid
+    assert len(note.errors) > 0
     with pytest.raises(ValidateError):
         note.save()
+    note.save(skip_validation=True)
 
     note.message = 'message'
-    note.validate()
+    note._validate()
     note.save()
     assert note.message == Note.get_by_id(note.id).message
     # with validates decorator
@@ -135,22 +139,24 @@ def test_validator(table):
 
     note.message = 'raise error'
     with pytest.raises(ValidateError):
-        note.validate()
+        note.save()
+    note.message = 'no error'
+    note.save()
     # with combination
     note = PgNote()
     assert inspect.ismethod(note.validate_message)
     assert note.validate_nothing(None) == 'nothing'
     note.message = 'raise'
     with pytest.raises(ValidateError):
-        note.validate()
+        note.save()
     note.message = 'no'
     with pytest.raises(ValidateError):
-        note.validate()
+        note.save()
     note.message = 'Hello'
     with pytest.raises(ValidateError):
-        note.validate()
+        note.save()
     note.message = 'hello'
-    note.validate()
+    note.save()
 
 
 def test_mysql():
