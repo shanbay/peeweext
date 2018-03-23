@@ -1,9 +1,13 @@
 import json
 import datetime
+import inspect
+
 import peewee as pw
 import pendulum
 from blinker import signal
 from playhouse import pool, db_url
+
+from .validator import ValidateError
 
 __version__ = '0.5.0'
 
@@ -70,15 +74,37 @@ post_delete = signal('post_delete')
 pre_init = signal('pre_init')
 
 
-class Model(pw.Model):
+class ModelMeta(pw.ModelBase):
+    """Model meta class, provide validation."""
+
+    def __init__(cls, name, bases, attrs):
+        """Store validator."""
+        super().__init__(name, bases, attrs)
+        validators = {}  # {'field_name': `callable`}
+        setattr(cls, '_validators', validators)
+        # add validator by model`s validation method
+        for k, v in attrs.items():
+            if k.startswith('validate_') and inspect.isfunction(v):
+                field_name = k[9:]  # 9 = len('validate_')
+                if field_name not in cls._meta.fields:
+                    continue
+                validators[field_name] = v
+
+
+class Model(pw.Model, metaclass=ModelMeta):
     created_at = DatetimeTZField(default=pendulum.utcnow)
     updated_at = DatetimeTZField(default=pendulum.utcnow)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         pre_init.send(type(self), instance=self)
+        self._validate_errors = {}  # eg: {'field_name': 'error information'}
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, skip_validation=False, **kwargs):
+        if not skip_validation:
+            if not self.is_valid:
+                raise ValidateError(str(self._validate_errors))
+
         pk_value = self._pk
         created = kwargs.get('force_insert', False) or not bool(pk_value)
         pre_save.send(type(self), instance=self, created=created)
@@ -91,6 +117,30 @@ class Model(pw.Model):
         ret = super().delete_instance(*args, **kwargs)
         post_delete.send(type(self), instance=self)
         return ret
+
+    def _validate(self):
+        """Validate model data and save errors
+        """
+        errors = {}
+
+        for name, validator in self._validators.items():
+            value = getattr(self, name)
+
+            try:
+                validator(self, value)
+            except ValidateError as e:
+                errors[name] = str(e)
+
+        self._validate_errors = errors
+
+    @property
+    def errors(self):
+        self._validate()
+        return self._validate_errors
+
+    @property
+    def is_valid(self):
+        return not self.errors
 
 
 def _touch_model(sender, instance, created):

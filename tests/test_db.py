@@ -4,7 +4,10 @@ import peeweext
 import pendulum
 import datetime
 from io import StringIO
+import inspect
 from peeweext import JSONCharField
+
+from peeweext.validator import *
 
 from tests.flaskapp import pwdb, pwmysql, pwpgsql
 
@@ -15,15 +18,31 @@ class Note(pwdb.Model):
     message = peewee.TextField()
     published_at = peeweext.DatetimeTZField(null=True)
 
+    def validate_message(self, value):
+        if value == 'raise error':
+            raise ValidateError
+
 
 class MyNote(pwmysql.Model):
     message = peewee.TextField()
     published_at = peeweext.DatetimeTZField(null=True)
 
+    @validates(ExclusionValidator('raise error'))
+    def validate_message(self, value):
+        pass
+
 
 class PgNote(pwpgsql.Model):
     message = peewee.TextField()
     published_at = peeweext.DatetimeTZField(null=True)
+
+    @validates(ExclusionValidator('raise'), LengthValidator(min_length=3, max_length=6))
+    def validate_message(self, value):
+        if value != 'hello':
+            raise ValidateError
+
+    def validate_nothing(self, value):
+        return 'nothing'
 
 
 class Category(pwdb.Model):
@@ -39,8 +58,12 @@ class MyCategory(pwmysql.Model):
 @pytest.fixture
 def table():
     Note.create_table()
+    PgNote.create_table()
+    MyNote.create_table()
     yield
     Note.drop_table()
+    PgNote.drop_table()
+    MyNote.drop_table()
 
 
 def test_db(table):
@@ -93,6 +116,47 @@ def test_model(table):
     n.delete_instance()
 
     assert 'post_delete' in out.getvalue()
+
+
+def test_validator(table):
+    note = Note()
+    assert inspect.ismethod(note.validate_message)
+
+    note.message = 'raise error'
+    assert not note.is_valid
+    assert len(note.errors) > 0
+    with pytest.raises(ValidateError):
+        note.save()
+    note.save(skip_validation=True)
+
+    note.message = 'message'
+    note._validate()
+    note.save()
+    assert note.message == Note.get_by_id(note.id).message
+    # with validates decorator
+    note = MyNote()
+    assert inspect.ismethod(note.validate_message)
+
+    note.message = 'raise error'
+    with pytest.raises(ValidateError):
+        note.save()
+    note.message = 'no error'
+    note.save()
+    # with combination
+    note = PgNote()
+    assert inspect.ismethod(note.validate_message)
+    assert note.validate_nothing(None) == 'nothing'
+    note.message = 'raise'
+    with pytest.raises(ValidateError):
+        note.save()
+    note.message = 'no'
+    with pytest.raises(ValidateError):
+        note.save()
+    note.message = 'Hello'
+    with pytest.raises(ValidateError):
+        note.save()
+    note.message = 'hello'
+    note.save()
 
 
 def test_mysql():
