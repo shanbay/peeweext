@@ -47,12 +47,12 @@ class PgNote(pwpgsql.Model):
 
 class Category(pwdb.Model):
     id = peewee.AutoField()
-    content = JSONCharField(default={})
+    content = JSONCharField(max_length=128, default={})
 
 
 class MyCategory(pwmysql.Model):
     id = peewee.AutoField()
-    content = JSONCharField(default={})
+    content = JSONCharField(max_length=128, default={})
 
 
 @pytest.fixture
