@@ -15,6 +15,8 @@
 基于 `peewee.CharField` 实现的 JSONField, 可用于存储可被 JSON 化的对象，如字符串，字典等。  
 在写入数据库时，该字段的值会被 JSON 编码成字符串；在读取数据时，数据库中的字符串值也会被 JSON 解码成 Python 的数据结构。
 
+如果写入时，JSON 序列化后的字符串长度超过该字段的 `max_length` 定义，则会抛出 `ValueError` 异常。
+
 ## Model
 
 ### `peeweext.Model`
