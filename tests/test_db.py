@@ -5,7 +5,7 @@ import pendulum
 import datetime
 from io import StringIO
 import inspect
-from peeweext import JSONCharField
+from peeweext import JSONCharField, DataError
 
 from peeweext.validator import *
 
@@ -189,6 +189,11 @@ def json_field_test(CategoryModel):
     # Create with explicit value
     category = CategoryModel.create(content=['one', 'two'])
     assert category.content == ['one', 'two']
+
+    # Create with long data
+    with pytest.raises(DataError) as exc:
+        CategoryModel.create(content=list(range(10000)))
+        assert exc.args[0] == 'Data too long for field content.'
 
     # Update by save
     category.content = [1, 2]
