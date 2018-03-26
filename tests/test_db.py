@@ -190,6 +190,11 @@ def json_field_test(CategoryModel):
     category = CategoryModel.create(content=['one', 'two'])
     assert category.content == ['one', 'two']
 
+    # Create with long data
+    with pytest.raises(ValueError) as exc:
+        CategoryModel.create(content=list(range(10000)))
+        assert exc.args[0] == 'Data too long for field content.'
+
     # Update by save
     category.content = [1, 2]
     category.save()
