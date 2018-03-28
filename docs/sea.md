@@ -5,8 +5,12 @@
 `config/default.py`
 
 ```python
-PW_DB_URL = 'sqlite+smart:///:memory:'
-PW_CONN_PARAMS = {'max_connections': 2}
+PW_DB_URL = 'mysql+pool://root:@127.0.0.1/peeweext?max_connections=2'
+MIDDLEWARES = [
+    'sea.middleware.ServiceLogMiddleware',
+    'sea.middleware.RpcErrorMiddleware',
+    'peeweext.sea.PeeweextMiddleware' # It's very important!!!!
+]
 ```
 
 ## 创建 Extension
@@ -14,7 +18,7 @@ PW_CONN_PARAMS = {'max_connections': 2}
 `app/extension.py`
 
 ```python
-from peeweext import Peeweext
+from peeweext.sea import Peeweext
 
 pwdb = Peeweext()
 ```

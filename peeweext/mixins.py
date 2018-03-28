@@ -1,14 +1,14 @@
-from . import pre_save, SmartDatabase
+from .model import pre_save
 
 
-def gen_sequence(sender, instance, created):
+def _gen_sequence(sender, instance, created):
     if issubclass(sender, SequenceMixin) and created:
         model = sender
         max_id_obj = model.select(model.id).order_by(-model.id).first()
         instance.sequence = max_id_obj.id + 1 if max_id_obj else 1.0
 
 
-pre_save.connect(gen_sequence)
+pre_save.connect(_gen_sequence)
 
 
 class SequenceMixin:
@@ -23,9 +23,6 @@ class SequenceMixin:
     sequence = pw.DoubleField()
     """
     __seq_scope_field_name__ = None
-
-    def _is_smart_database(self):
-        return isinstance(self._meta.database, SmartDatabase)
 
     def _sequence_query(self):
         """
@@ -100,11 +97,4 @@ class SequenceMixin:
         """
         if new_sequence < 1:
             raise ValueError("Sequence is not proper")  # pragma no cover
-
-        if self._is_smart_database():
-            with self._meta.database.connection_context():
-                self._change_sequence(new_sequence)
-        else:
-            # the connection will be closed by change_sequence
-            # if we use connection_context
-            self._change_sequence(new_sequence)
+        self._change_sequence(new_sequence)

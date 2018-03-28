@@ -3,5 +3,6 @@
 - 集成
     - [Sea](sea)
     - [Flask](flask)
-- [扩展的Model&Field](model-fields)
-- [Database](database)
+- [Model&Field](model-fields)
+- [Mixins](Mixins)
+- [Validation](validation)

@@ -1,34 +1,31 @@
 import pytest
-from peewee import *
+import peewee as pw
 
-from peeweext.sequence import SequenceMixin
-from tests.flaskapp import pwdb, normal_db
+from peeweext.mixins import SequenceMixin
+from tests.flaskapp import pwdb
 
 db = pwdb.database
 
 
 class Category(pwdb.Model):
-    id = AutoField()
-    name = CharField(max_length=45, unique=True)
+    id = pw.AutoField()
+    name = pw.CharField(max_length=45, unique=True)
 
 
 class Course(pwdb.Model, SequenceMixin):
     __seq_scope_field_name__ = 'category'
 
-    id = AutoField()
-    sequence = DoubleField(null=True)
-    category = ForeignKeyField(Category, backref='courses')
-    title = CharField(max_length=45, unique=True)
+    id = pw.AutoField()
+    sequence = pw.DoubleField(null=True)
+    category = pw.ForeignKeyField(Category, backref='courses')
+    title = pw.CharField(max_length=45, unique=True)
 
 
 class Book(SequenceMixin, pwdb.Model):
     __seq_scope_field_name__ = None
 
-    class Meta:
-        database = normal_db
-
-    id = AutoField()
-    sequence = DoubleField(null=True)
+    id = pw.AutoField()
+    sequence = pw.DoubleField(null=True)
 
 
 @pytest.fixture

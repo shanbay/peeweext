@@ -5,9 +5,9 @@ import pendulum
 import datetime
 from io import StringIO
 import inspect
-from peeweext import JSONCharField
 
-from peeweext.validator import *
+from peeweext.fields import JSONCharField
+from peeweext import validation as val
 
 from tests.flaskapp import pwdb, pwmysql, pwpgsql
 
@@ -16,30 +16,32 @@ db = pwdb.database
 
 class Note(pwdb.Model):
     message = peewee.TextField()
-    published_at = peeweext.DatetimeTZField(null=True)
+    published_at = peeweext.fields.DatetimeTZField(null=True)
 
     def validate_message(self, value):
         if value == 'raise error':
-            raise ValidateError
+            raise val.ValidationError
 
 
 class MyNote(pwmysql.Model):
     message = peewee.TextField()
-    published_at = peeweext.DatetimeTZField(null=True)
+    published_at = peeweext.fields.DatetimeTZField(null=True)
 
-    @validates(ExclusionValidator('raise error'))
+    @val.validates(val.ExclusionValidator('raise error'))
     def validate_message(self, value):
         pass
 
 
 class PgNote(pwpgsql.Model):
     message = peewee.TextField()
-    published_at = peeweext.DatetimeTZField(null=True)
+    published_at = peeweext.fields.DatetimeTZField(null=True)
 
-    @validates(ExclusionValidator('raise'), LengthValidator(min_length=3, max_length=6))
+    @val.validates(
+        val.ExclusionValidator('raise'),
+        val.LengthValidator(min_length=3, max_length=6))
     def validate_message(self, value):
         if value != 'hello':
-            raise ValidateError
+            raise val.ValidationError
 
     def validate_nothing(self, value):
         return 'nothing'
@@ -64,25 +66,6 @@ def table():
     Note.drop_table()
     PgNote.drop_table()
     MyNote.drop_table()
-
-
-def test_db(table):
-
-    n1 = Note.create(message='Hello')
-    assert db.is_closed()
-    assert Note.get_by_id(n1.id).message == 'Hello'
-
-    n2 = Note(message='World')
-    n2.save()
-    assert db.is_closed()
-    assert Note.get(Note.id == n2.id).message == 'World'
-
-    with db.connection_context():
-        with db.atomic():
-            n3 = Note.create(message='!!')
-            Note.create(message='ahh')
-    assert db.is_closed()
-    assert Note[n3.id].message == '!!'
 
 
 def test_model(table):
@@ -112,7 +95,7 @@ def test_model(table):
     def post_delete(sender, instance):
         out.write('post_delete received')
 
-    peeweext.post_delete.connect(post_delete, sender=Note)
+    peeweext.model.post_delete.connect(post_delete, sender=Note)
     n.delete_instance()
 
     assert 'post_delete' in out.getvalue()
@@ -125,7 +108,7 @@ def test_validator(table):
     note.message = 'raise error'
     assert not note.is_valid
     assert len(note.errors) > 0
-    with pytest.raises(ValidateError):
+    with pytest.raises(val.ValidationError):
         note.save()
     note.save(skip_validation=True)
 
@@ -138,7 +121,7 @@ def test_validator(table):
     assert inspect.ismethod(note.validate_message)
 
     note.message = 'raise error'
-    with pytest.raises(ValidateError):
+    with pytest.raises(val.ValidationError):
         note.save()
     note.message = 'no error'
     note.save()
@@ -147,19 +130,20 @@ def test_validator(table):
     assert inspect.ismethod(note.validate_message)
     assert note.validate_nothing(None) == 'nothing'
     note.message = 'raise'
-    with pytest.raises(ValidateError):
+    with pytest.raises(val.ValidationError):
         note.save()
     note.message = 'no'
-    with pytest.raises(ValidateError):
+    with pytest.raises(val.ValidationError):
         note.save()
     note.message = 'Hello'
-    with pytest.raises(ValidateError):
+    with pytest.raises(val.ValidationError):
         note.save()
     note.message = 'hello'
     note.save()
 
 
-def test_mysql():
+def test_datetime():
+    # mysql
     MyNote.create_table()
     dt = datetime.datetime.now(
         tz=datetime.timezone(datetime.timedelta(hours=8)))
@@ -169,8 +153,7 @@ def test_mysql():
     assert n.published_at.timestamp() == dt.timestamp()
     MyNote.drop_table()
 
-
-def test_pgsql():
+    # pgsql
     PgNote.create_table()
     dt = datetime.datetime.now(
         tz=datetime.timezone(datetime.timedelta(hours=8)))

@@ -3,7 +3,7 @@ import re
 import functools
 
 
-class ValidateError(BaseException):
+class ValidationError(BaseException):
     pass
 
 
@@ -12,7 +12,7 @@ class BaseValidator:
         """Validate value.
         :param value: value to validate
         :return None
-        :raise ValidateError
+        :raise ValidationError
         """
         pass
 
@@ -26,14 +26,14 @@ class ExclusionValidator(BaseValidator):
 
     def validate(self, value):
         if value in self._data:
-            raise ValidateError('value {:s} is in {:s}'.format(
+            raise ValidationError('value {:s} is in {:s}'.format(
                 str(value), str(self._data)))
 
 
 class InclusionValidator(ExclusionValidator):
     def validate(self, value):
         if value not in self._data:
-            raise ValidateError('value {:s} is not in {:s}'.format(
+            raise ValidationError('value {:s} is not in {:s}'.format(
                 str(value), str(self._data)))
 
 
@@ -48,7 +48,7 @@ class RegexValidator(BaseValidator):
         :return:
         """
         if not self._compiled_regex.match(value):
-            raise ValidateError(
+            raise ValidationError(
                 'value {:s} not match r"{:s}"'.format(value, self._regex))
 
 
@@ -62,8 +62,9 @@ class LengthValidator(BaseValidator):
         if self.min_length <= length <= self.max_length:
             pass
         else:
-            raise ValidateError('length {:d} not in range ({:d},{:d})'.format(
-                length, self.min_length, self.max_length))
+            raise ValidationError(
+                'length {:d} not in range ({:d},{:d})'.format(
+                    length, self.min_length, self.max_length))
 
 
 class validates:
