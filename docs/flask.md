@@ -4,10 +4,10 @@
 
 ```python
 from flask import Flask
-from peeweext import Peeweext
+from peeweext.flask import Peeweext
 
 SECRET_KEY = 'ssshhhh'
-PW_DB_URL = 'sqlite+smart:///:memory:'
+PW_DB_URL = 'postgresql+pool://postgres:@127.0.0.1/peeweext'
 PW_CONN_PARAMS = {'max_connections': 2}
 
 app = Flask(__name__)
