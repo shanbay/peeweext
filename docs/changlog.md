@@ -1,4 +1,4 @@
-# upgrade from 0.7.0 to 0.7.x
+# upgrade from pre 0.7.0 to 0.7.x
 
 1. db_url 不再支持 `smart` 家族，替换为 `pool`
 2. `peeweext.Peeweext` 位置更新。
