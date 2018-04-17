@@ -30,17 +30,14 @@ class SequenceMixin:
         """
         klass = self.__class__
         query = klass.select().where(klass.sequence.is_null(False))
-        seq_scope_field_names = None
+        seq_scope_field_names = []
         if self.__seq_scope_field_name__:
             seq_scope_field_names = self.__seq_scope_field_name__.split(',')
-        if not seq_scope_field_names:
-            return query
         for name in seq_scope_field_names:
             seq_scope_field = getattr(klass, name, None)
-            if not seq_scope_field:
-                continue
-            seq_scope_field_value = getattr(self, name)
-            query = query.where(seq_scope_field == seq_scope_field_value)
+            if seq_scope_field:
+                seq_scope_field_value = getattr(self, name)
+                query = query.where(seq_scope_field == seq_scope_field_value)
         return query
 
     def _loosen(self):
