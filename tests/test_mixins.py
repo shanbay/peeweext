@@ -11,6 +11,9 @@ class Category(pwdb.Model):
     id = pw.AutoField()
     name = pw.CharField(max_length=45, unique=True)
 
+class Author(pwdb.Model):
+    id = pw.AutoField()
+    name = pw.CharField(max_length=45, unique=True)
 
 class Course(pwdb.Model, SequenceMixin):
     __seq_scope_field_name__ = 'category'
@@ -31,10 +34,12 @@ class Book(SequenceMixin, pwdb.Model):
 @pytest.fixture
 def table():
     Category.create_table()
+    Author.create_table()
     Course.create_table()
     Book.create_table()
     yield
     Category.drop_table()
+    Author.drop_table()
     Course.drop_table()
     Book.drop_table()
 
@@ -42,10 +47,14 @@ def table():
 def test_sequence(table):
     for name in ['Python', 'Ruby']:
         Category.create(name=name)
+        Author.create(name=name + 'er')
     category_1, category_2 = Category.select()
+    author_1, author_2 = Author.select()
     for title in ['Step1', 'Step2', 'Step3']:
-        Course.create(title=category_1.name + title, category_id=category_1.id)
-        Course.create(title=category_2.name + title, category_id=category_2.id)
+        Course.create(title=category_1.name + title,
+            category_id=category_1.id, author_id=author_1.id)
+        Course.create(title=category_2.name + title,
+            category_id=category_2.id, author_id=author_2.id)
 
     c = category_1.courses.first()
     assert c.sequence, 1
@@ -64,7 +73,10 @@ def test_sequence(table):
     pre_course = courses.first()
     for c in courses[1:]:
         assert c.category_id >= pre_course.category_id
+        assert c.author_id >= pre_course.author_id
         if c.category_id == pre_course.category_id:
+            assert c.sequence > pre_course.sequence
+        if c.author_id == pre_course.author_id:
             assert c.sequence > pre_course.sequence
         pre_course = c
 
@@ -84,8 +96,10 @@ def test_sequence(table):
 
 def test_sequence_auto_loosen(table):
     category = Category.create(name='Python')
+    author = Author.create(name='Pythoner')
     for title in ['Step1', 'Step2', 'Step3']:
-        Course.create(title=category.name + title, category_id=category.id)
+        Course.create(title=category.name + title,
+            category_id=category.id, author_id=author.id)
 
     for round_ in range(50):
         c = Course.select().order_by(-Course.sequence).first()
