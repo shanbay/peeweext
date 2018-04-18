@@ -22,7 +22,7 @@ class Course(pwdb.Model, SequenceMixin):
 需要按照多个字段指定排序范围时，`__seq_scope_field_name__` 写成如下形式：
 
 ```python
-__seq_scope_field_name__ = 'category,author'
+__seq_scope_field_name__ = 'field_name1,field_name2'
 ```
 
 当创建一个新的对象前, 会通过信号设置一个 sequence, 当需要修改对象的 sequence 时, 请调用 `change_sequence` 方法, 任何时候都不要手动的修改 sequence 的值
