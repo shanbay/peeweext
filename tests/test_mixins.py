@@ -16,11 +16,12 @@ class Author(pwdb.Model):
     name = pw.CharField(max_length=45, unique=True)
 
 class Course(pwdb.Model, SequenceMixin):
-    __seq_scope_field_name__ = 'category'
+    __seq_scope_field_name__ = 'category,author'
 
     id = pw.AutoField()
     sequence = pw.DoubleField(null=True)
     category = pw.ForeignKeyField(Category, backref='courses')
+    author = pw.ForeignKeyField(Author, backref='authors')
     title = pw.CharField(max_length=45, unique=True)
 
 
@@ -69,11 +70,9 @@ def test_sequence(table):
     c.change_sequence(1)
     assert c.sequence, 1
 
-    courses = Course.select()
-    pre_course = courses.first()
+    courses = list(Course.select().order_by(Course.id))
+    pre_course = courses[0]
     for c in courses[1:]:
-        assert c.category_id >= pre_course.category_id
-        assert c.author_id >= pre_course.author_id
         if c.category_id == pre_course.category_id:
             assert c.sequence > pre_course.sequence
         if c.author_id == pre_course.author_id:

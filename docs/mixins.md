@@ -15,6 +15,7 @@ class Course(pwdb.Model, SequenceMixin):
     id = AutoField()
     sequence = DoubleField()
     category = ForeignKeyField(Category, backref='courses')
+    author = pw.ForeignKeyField(Author, backref='authors')
     title = CharField(max_length=45, unique=True)
 ```
 
