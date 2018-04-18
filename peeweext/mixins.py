@@ -30,7 +30,8 @@ class SequenceMixin:
         """
         klass = self.__class__
         query = klass.select().where(klass.sequence.is_null(False))
-        seq_scope_field_names = (self.__seq_scope_field_name__ or '').split(',')
+        seq_scope_field_names =\
+            (self.__seq_scope_field_name__ or '').split(',')
         for name in seq_scope_field_names:
             seq_scope_field = getattr(klass, name, None)
             if seq_scope_field:
