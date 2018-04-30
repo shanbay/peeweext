@@ -56,6 +56,7 @@ class Category(pwdb.Model):
 class MyCategory(pwmysql.Model):
     id = peewee.AutoField()
     content = JSONCharField(max_length=128, default={})
+    remark = JSONCharField(max_length=128, null=True)
 
 
 @pytest.fixture
