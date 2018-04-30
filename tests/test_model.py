@@ -172,6 +172,10 @@ def json_field_test(CategoryModel):
     assert default_category.content == {}
     assert default_category.remark is None
 
+    default_category.remark = None
+    default_category.save()
+    assert default_category.remark is None
+
     # Create with explicit value
     category = CategoryModel.create(content=['one', 'two'])
     assert category.content == ['one', 'two']
