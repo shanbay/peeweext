@@ -36,7 +36,14 @@ class Peeweext:
         app.teardown_request(self.close_db)
         try:
             from celery.signals import task_prerun, task_postrun
-            task_prerun.connect(lambda *arg, **kw: self.connect_db())
-            task_postrun.connect(lambda *arg, **kw: self.close_db(None))
+
+            @task_prerun
+            def connect_db(*args, **kwargs):
+                self.connect_db()
+
+            @task_postrun
+            def close_db(*args, **kwargs):
+                self.close_db(None)
+
         except ImportError:
             pass
