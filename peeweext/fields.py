@@ -25,8 +25,7 @@ class DatetimeTZField(pw.Field):
             raise ValueError('datetime instance required')
         if value.utcoffset() is None:
             raise ValueError('timezone aware datetime required')
-        if isinstance(value, pendulum.Pendulum):
-            value = value._datetime
+
         return value.astimezone(datetime.timezone.utc)
 
 
