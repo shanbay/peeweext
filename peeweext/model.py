@@ -2,6 +2,7 @@ import inspect
 
 import peewee as pw
 import pendulum
+from functools import partial
 from blinker import signal
 
 from .validation import ValidationError
@@ -13,6 +14,8 @@ post_save = signal('post_save')
 pre_delete = signal('pre_delete')
 post_delete = signal('post_delete')
 pre_init = signal('pre_init')
+
+utcnow = partial(pendulum.now, 'UTC')
 
 
 class ModelMeta(pw.ModelBase):
@@ -31,8 +34,8 @@ class ModelMeta(pw.ModelBase):
 
 
 class Model(pw.Model, metaclass=ModelMeta):
-    created_at = DatetimeTZField(default=pendulum.utcnow)
-    updated_at = DatetimeTZField(default=pendulum.utcnow)
+    created_at = DatetimeTZField(default=utcnow)
+    updated_at = DatetimeTZField(default=utcnow)
 
     def __init__(self, *args, **kwargs):
         pre_init.send(type(self), instance=self)
@@ -84,7 +87,7 @@ class Model(pw.Model, metaclass=ModelMeta):
 
 def _touch_model(sender, instance, created):
     if issubclass(sender, Model):
-        instance.updated_at = pendulum.utcnow()
+        instance.updated_at = utcnow()
 
 
 pre_save.connect(_touch_model)
