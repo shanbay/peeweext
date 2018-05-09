@@ -31,8 +31,8 @@ class ModelMeta(pw.ModelBase):
 
 
 class Model(pw.Model, metaclass=ModelMeta):
-    created_at = DatetimeTZField(default=pendulum.utcnow)
-    updated_at = DatetimeTZField(default=pendulum.utcnow)
+    created_at = DatetimeTZField(default=pendulum.now)
+    updated_at = DatetimeTZField(default=pendulum.now)
 
     def __init__(self, *args, **kwargs):
         pre_init.send(type(self), instance=self)
@@ -84,7 +84,7 @@ class Model(pw.Model, metaclass=ModelMeta):
 
 def _touch_model(sender, instance, created):
     if issubclass(sender, Model):
-        instance.updated_at = pendulum.utcnow()
+        instance.updated_at = pendulum.now()
 
 
 pre_save.connect(_touch_model)

@@ -4,5 +4,5 @@
     - [Sea](sea)
     - [Flask](flask)
 - [Model&Field](model-fields)
-- [Mixins](Mixins)
+- [Mixins](mixins)
 - [Validation](validation)
