@@ -3,7 +3,7 @@ import re
 import functools
 
 
-class ValidationError(BaseException):
+class ValidationError(Exception):
     pass
 
 
