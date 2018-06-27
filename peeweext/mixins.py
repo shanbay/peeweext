@@ -4,8 +4,8 @@ from .model import pre_save
 def _gen_sequence(sender, instance, created):
     if issubclass(sender, SequenceMixin) and created:
         model = sender
-        max_id_obj = model.select(model.id).order_by(-model.id).first()
-        instance.sequence = max_id_obj.id + 1 if max_id_obj else 1.0
+        max_id_obj = instance._sequence_query().order_by(-model.id).first()
+        instance.sequence = max_id_obj.sequence + 1 if max_id_obj else 1.0
 
 
 pre_save.connect(_gen_sequence)
