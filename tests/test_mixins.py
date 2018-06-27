@@ -51,17 +51,23 @@ def test_sequence(table):
         Author.create(name=name + 'er')
     category_1, category_2 = Category.select()
     author_1, author_2 = Author.select()
-    for title in ['Step1', 'Step2', 'Step3']:
-        Course.create(title=category_1.name + title,
-            category_id=category_1.id, author_id=author_1.id)
-        Course.create(title=category_2.name + title,
-            category_id=category_2.id, author_id=author_2.id)
+    for i, title in enumerate(['Step1', 'Step2', 'Step3']):
+        course = Course.create(title=category_1.name + title,
+                               category_id=category_1.id,
+                               author_id=author_1.id)
+        assert course.sequence == i + 1
+        course = Course.create(title=category_2.name + title,
+                               category_id=category_2.id,
+                               author_id=author_2.id)
+        assert course.sequence == i + 1
 
     c = category_1.courses.first()
     assert c.sequence, 1
 
     current = 1
-    for course in Course.select().order_by(Course.id)[1:]:
+    for course in Course.select().where(Course.category_id == category_1.id,
+                                        Course.author_id == author_1.id
+                                        ).order_by(Course.id)[1:]:
         assert course.sequence > current
         current = course.sequence
 
