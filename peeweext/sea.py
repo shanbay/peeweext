@@ -2,7 +2,7 @@ from sea.utils import import_string, cached_property
 from sea.middleware import BaseMiddleware
 from sea.pb2 import default_pb2
 from playhouse import db_url
-from peewee import DoesNotExist
+from peewee import DoesNotExist, DataError
 import grpc
 
 from .validation import ValidationError
@@ -70,7 +70,7 @@ class PeeweextMiddleware(BaseMiddleware):
         except DoesNotExist as e:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details('Record Not Found')
-        except ValidationError as e:
+        except (ValidationError, DataError) as e:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details(str(e))
         finally:
