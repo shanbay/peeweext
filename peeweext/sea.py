@@ -9,7 +9,6 @@ from .validation import ValidationError
 
 
 class Peeweext:
-
     def __init__(self, ns='PW_'):
         self.ns = ns
 
@@ -40,19 +39,21 @@ class Peeweext:
     def _try_setup_celery(self):
         try:
             from celery.signals import task_prerun, task_postrun
-            task_prerun.connect(lambda *arg, **kw: self.connect_db())
-            task_postrun.connect(lambda *arg, **kw: self.close_db())
+            task_prerun.connect(
+                lambda *arg, **kw: self.connect_db(), weak=False)
+            task_postrun.connect(
+                lambda *arg, **kw: self.close_db(), weak=False)
         except ImportError:
             pass
 
 
 class PeeweextMiddleware(BaseMiddleware):
-
     def __init__(self, app, handler, origin_handler):
         super().__init__(app, handler, origin_handler)
         self.pwxs = [
             ext for n, ext in app.extensions.items()
-            if isinstance(ext, Peeweext)]
+            if isinstance(ext, Peeweext)
+        ]
 
     def connect_db(self):
         for pwx in self.pwxs:

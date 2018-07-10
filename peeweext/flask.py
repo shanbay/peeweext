@@ -3,7 +3,6 @@ from playhouse import db_url
 
 
 class Peeweext:
-
     def __init__(self, ns='PW_'):
         self.ns = ns
 
@@ -36,7 +35,9 @@ class Peeweext:
         app.teardown_request(self.close_db)
         try:
             from celery.signals import task_prerun, task_postrun
-            task_prerun.connect(lambda *arg, **kw: self.connect_db())
-            task_postrun.connect(lambda *arg, **kw: self.close_db(None))
+            task_prerun.connect(
+                lambda *arg, **kw: self.connect_db(), weak=False)
+            task_postrun.connect(
+                lambda *arg, **kw: self.close_db(None), weak=False)
         except ImportError:
             pass
