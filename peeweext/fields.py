@@ -33,10 +33,14 @@ class DatetimeTZField(pw.Field):
 
 class JSONCharField(pw.CharField):
     def db_value(self, value):
+        if value is None:
+            return value
         data = json.dumps(value)
         if len(data) > self.max_length:
             raise ValueError('Data too long for field {}.'.format(self.name))
         return data
 
     def python_value(self, value):
+        if value is None:
+            return value
         return json.loads(value)

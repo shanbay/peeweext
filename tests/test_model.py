@@ -50,11 +50,13 @@ class PgNote(pwpgsql.Model):
 class Category(pwdb.Model):
     id = peewee.AutoField()
     content = JSONCharField(max_length=128, default={})
+    remark = JSONCharField(max_length=128, null=True)
 
 
 class MyCategory(pwmysql.Model):
     id = peewee.AutoField()
     content = JSONCharField(max_length=128, default={})
+    remark = JSONCharField(max_length=128, null=True)
 
 
 @pytest.fixture
@@ -168,6 +170,11 @@ def json_field_test(CategoryModel):
     # Create with default value
     default_category = CategoryModel.create()
     assert default_category.content == {}
+    assert default_category.remark is None
+
+    default_category.remark = None
+    default_category.save()
+    assert default_category.remark is None
 
     # Create with explicit value
     category = CategoryModel.create(content=['one', 'two'])
