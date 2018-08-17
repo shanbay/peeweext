@@ -1,5 +1,6 @@
-import pytest
+import os
 
+import pytest
 from peeweext import validation
 
 
@@ -34,3 +35,21 @@ def test_regex():
     validator.validate('xyz')
     with pytest.raises(validation.ValidationError):
         validator('Xyz')
+
+
+def create_path(filename):
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), filename))
+
+
+def test_url_validator():
+    validator = validation.URLValidator(null=True)
+    with open(create_path('valid_urls.txt'), encoding='utf8') as f:
+        for url in f:
+            assert validator.validate(url.strip()) is None
+
+    assert validator.validate('') is None
+
+    with open(create_path('invalid_urls.txt'), encoding='utf8') as f:
+        for url in f:
+            with pytest.raises(validation.ValidationError):
+                validator.validate(url.strip())
