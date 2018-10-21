@@ -144,6 +144,12 @@ def test_validator(table):
     note.save()
 
 
+def test_delete(table):
+    note = Note()
+    with pytest.raises(UserWarning):
+        note.delete().execute()
+
+
 def test_datetime():
     # mysql
     MyNote.create_table()

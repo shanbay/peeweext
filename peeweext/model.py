@@ -51,6 +51,11 @@ class Model(pw.Model, metaclass=ModelMeta):
         post_save.send(type(self), instance=self, created=created)
         return ret
 
+    def delete(self, *args, **kwargs):
+        raise UserWarning(
+            "Instance's delete() method will clear all rows in table!"
+        )
+
     def delete_instance(self, *args, **kwargs):
         pre_delete.send(type(self), instance=self)
         ret = super().delete_instance(*args, **kwargs)
