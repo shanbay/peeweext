@@ -1,4 +1,5 @@
 from .model import pre_save
+from peewee import fn, SQL
 
 
 def _gen_sequence(sender, instance, created):
@@ -49,7 +50,8 @@ class SequenceMixin:
         with self._meta.database.atomic():
             klass = self.__class__
             current_sequence = self._sequence_query().where(
-                klass.sequence <= self.sequence).count()
+                klass.sequence <= self.sequence).select(
+                fn.COUNT(SQL('1'))).scalar()
             if current_sequence == new_sequence:
                 return
             if new_sequence > 1:
