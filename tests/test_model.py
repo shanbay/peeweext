@@ -144,10 +144,19 @@ def test_validator(table):
     note.save()
 
 
-def test_delete(table):
+def test_instance_delete(table):
     note = Note()
     with pytest.raises(UserWarning):
         note.delete().execute()
+
+    Note.delete().execute()
+    ins = Note.get_or_none(Note.id == note.id)
+    assert ins is None
+
+    note = Note()
+    note.delete_instance()
+    ins = Note.get_or_none(Note.id==note.id)
+    assert ins is None
 
 
 def test_datetime():
