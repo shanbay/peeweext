@@ -67,7 +67,7 @@ class PeeweextMiddleware(BaseMiddleware):
         try:
             self.connect_db()
             return self.handler(servicer, request, context)
-        except DoesNotExist as e:
+        except DoesNotExist:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details('Record Not Found')
         except (ValidationError, DataError) as e:

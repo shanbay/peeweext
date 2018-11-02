@@ -52,18 +52,19 @@ class Model(pw.Model, metaclass=ModelMeta):
         return ret
 
     def delete_instance(self, *args, **kwargs):
-        pre_delete.send(type(self), instance=self)
+        model = type(self)
+        pre_delete.send(model, instance=self)
         recursive = kwargs.get('recursive', False)
         delete_nullable = kwargs.get('delete_nullable', False)
         if recursive:
             dependencies = self.dependencies(delete_nullable)
             for query, fk in reversed(list(dependencies)):
-                model = fk.model
+                fk_model = fk.model
                 if fk.null and not delete_nullable:
-                    model.update(**{fk.name: None}).where(query).execute()
+                    fk_model.update(**{fk.name: None}).where(query).execute()
                 else:
-                    model.delete().where(query).execute()
-        ret = super().delete().where(self._pk_expr()).execute()
+                    fk_model.delete().where(query).execute()
+        ret = model.delete().where(self._pk_expr()).execute()
         post_delete.send(type(self), instance=self)
         return ret
 
