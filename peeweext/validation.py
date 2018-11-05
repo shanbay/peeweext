@@ -62,8 +62,10 @@ class URLValidator(RegexValidator):
     ul = '\u00a1-\uffff'  # unicode letters range (must not be a raw string)
 
     # IP patterns
-    ipv4_re = r'(?:25[0-5]|2[0-4]\d|[0-1]?\d?\d)(?:\.'\
-        '(?:25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}'
+    ipv4_re = (
+        r'(?:25[0-5]|2[0-4]\d|[0-1]?\d?\d)(?:\.'  # noqa: W605
+        '(?:25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}'  # noqa: W605
+    )
     ipv6_re = r'\[[0-9a-f:\.]+\]'  # (simple regex, validated later)
 
     # Host patterns

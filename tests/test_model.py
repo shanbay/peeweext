@@ -59,12 +59,18 @@ class MyCategory(pwmysql.Model):
     remark = JSONCharField(max_length=128, null=True)
 
 
+class MyNotebook(pwmysql.Model):
+    note = peewee.ForeignKeyField(MyNote, backref='notes', null=True)
+
+
 @pytest.fixture
 def table():
     Note.create_table()
     PgNote.create_table()
     MyNote.create_table()
+    MyNotebook.create_table()
     yield
+    MyNotebook.drop_table()
     Note.drop_table()
     PgNote.drop_table()
     MyNote.drop_table()
@@ -142,6 +148,74 @@ def test_validator(table):
         note.save()
     note.message = 'hello'
     note.save()
+
+
+def test_instance_delete(table):
+    # test delete
+    note = Note.create(message='Hello')
+    with pytest.raises(UserWarning):
+        note.delete().execute()
+
+    Note.delete().execute()
+    ins = Note.get_or_none(Note.id == note.id)
+    assert ins is None
+
+    # test delete_instance
+    note = Note.create(message='Hello')
+    note.delete_instance()
+    ins = Note.get_or_none(Note.id == note.id)
+    assert ins is None
+
+    # test delete
+    my_note = MyNote.create(message='Hello')
+    with pytest.raises(UserWarning):
+        my_note.delete().execute()
+
+    MyNote.delete().execute()
+    ins = MyNote.get_or_none(MyNote.id == my_note.id)
+    assert ins is None
+
+    # test delete_instance
+    with pytest.raises(peewee.IntegrityError):
+        my_note = MyNote.create(message='Hello')
+        _ = MyNotebook.create(note=my_note)
+        my_note.delete_instance()
+    MyNotebook.delete().execute()
+    MyNote.delete().execute()
+
+    # test delete_instance recursive
+    my_note = MyNote.create(message='Hello')
+    my_notebook = MyNotebook.create(note=my_note)
+    my_note.delete_instance(recursive=True, delete_nullable=True)
+    ins = MyNote.get_or_none(MyNote.id == my_note.id)
+    assert ins is None
+    ins = MyNotebook.get_or_none(MyNotebook.id == my_notebook.id)
+    assert ins is None
+
+    my_note = MyNote.create(message='Hello')
+    my_notebook = MyNotebook.create(note=my_note)
+    my_note.delete_instance(recursive=True)
+    ins = MyNote.get_or_none(MyNote.id == my_note.id)
+    assert ins is None
+    ins = MyNotebook.get_or_none(MyNotebook.id == my_notebook.id)
+    assert ins is not None
+    assert ins.note is None
+    MyNotebook.delete().execute()
+
+    # test delete
+    pg_note = PgNote.create(message='hello')
+    with pytest.raises(UserWarning):
+        pg_note.delete().execute()
+
+    PgNote.delete().execute()
+    ins = PgNote.get_or_none(PgNote.id == pg_note.id)
+    assert ins is None
+
+    # test delete_instance
+    pg_note = PgNote.create(message='hello')
+    pg_note.delete_instance()
+    ins = PgNote.get_or_none(PgNote.id == pg_note.id)
+    assert ins is None
 
 
 def test_datetime():

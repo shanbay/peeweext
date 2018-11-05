@@ -7,7 +7,6 @@ from blinker import signal
 from .validation import ValidationError
 from .fields import DatetimeTZField
 
-
 pre_save = signal('pre_save')
 post_save = signal('post_save')
 pre_delete = signal('pre_delete')
@@ -38,6 +37,7 @@ class Model(pw.Model, metaclass=ModelMeta):
         pre_init.send(type(self), instance=self)
         self._validate_errors = {}  # eg: {'field_name': 'error information'}
         super().__init__(*args, **kwargs)
+        self.delete = self._delete
 
     def save(self, *args, skip_validation=False, **kwargs):
         if not skip_validation:
@@ -52,10 +52,27 @@ class Model(pw.Model, metaclass=ModelMeta):
         return ret
 
     def delete_instance(self, *args, **kwargs):
-        pre_delete.send(type(self), instance=self)
-        ret = super().delete_instance(*args, **kwargs)
+        model = type(self)
+        pre_delete.send(model, instance=self)
+        recursive = kwargs.get('recursive', False)
+        delete_nullable = kwargs.get('delete_nullable', False)
+        if recursive:
+            dependencies = self.dependencies(delete_nullable)
+            for query, fk in reversed(list(dependencies)):
+                fk_model = fk.model
+                if fk.null and not delete_nullable:
+                    fk_model.update(**{fk.name: None}).where(query).execute()
+                else:
+                    fk_model.delete().where(query).execute()
+        ret = model.delete().where(self._pk_expr()).execute()
         post_delete.send(type(self), instance=self)
         return ret
+
+    def _delete(self, *args, **kwargs):
+        raise UserWarning(
+            "Use delete() in instance is forbidden! Try to use "
+            "delete_instance()"
+        )
 
     def _validate(self):
         """Validate model data and save errors
