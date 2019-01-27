@@ -39,7 +39,8 @@ class Model(pw.Model, metaclass=ModelMeta):
         super().__init__(*args, **kwargs)
         self.delete = self._delete
 
-    def save(self, *args, skip_validation=False, **kwargs):
+    def save(self, *args, **kwargs):
+        skip_validation = kwargs.pop('skip_validation', False)
         if not skip_validation:
             if not self.is_valid:
                 raise ValidationError(str(self._validate_errors))
