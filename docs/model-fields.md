@@ -51,3 +51,35 @@ pre_save.connect(handler)
 
 pre_save.connect(handler, sender=Note)
 ```
+
+**4. 支持 mass assignment 保护**
+
+如果定义了类级别变量：`__attr_whitelist__`, `__attr_accessible__` 和 `__attr_protected__`
+
+那么在通过 `Model.create` 或 `instance.update_with` 来进行批量字段赋值(mass assignment)时，只有特定的字段会赋值成功。
+
+例如：
+
+```python
+class Model(pwdb.Model):
+    __attr_whitelist__ = True
+    __attr_accessible__ = {'f1', 'f2', 'f3'}
+    __attr_protected__ = {'f3', 'f4'}
+
+    f1 = peewee.IntegerField(default=0)
+    f2 = peewee.IntegerField(default=0)
+    f3 = peewee.IntegerField(default=0)
+    f4 = peewee.IntegerField(default=0)
+
+m1 = Model.create(f1=1, f2=2, f3=3, f4=4) # m1: {f1: 1, f2: 2, f3: 0, f4:} 只有 f1, f2 赋值成功
+m1.update_with(f1=10, f2=10, f3=10, f4=10) # m1: {f1: 10, f2: 10, f3: 0, f4:} 只有 f1, f2 赋值成功
+
+m1.f3 = 10 # m1 {f3: 10} f3 赋值成功
+```
+
+`__attr_whitelist__`, `__attr_accessible__` 和 `__attr_protected__` 具体的关系：
+
+>  当 __attr_whitelist__ 为 True 的时候：
+>     只有在 __attr_accessible__ 中 并且(AND) 不在 __attr_protected__ 中的字段能够批量赋值
+>  否则:
+>     只有不在 __attr_protected__ 中 或者(OR) 在 __attr_accessible__ 中的字段能够批量赋值
