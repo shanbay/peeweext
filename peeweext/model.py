@@ -33,11 +33,48 @@ class Model(pw.Model, metaclass=ModelMeta):
     created_at = DatetimeTZField(default=pendulum.now)
     updated_at = DatetimeTZField(default=pendulum.now)
 
+    __attr_whitelist__ = False
+    __attr_accessible__ = set()
+    __attr_protected__ = set()
+
     def __init__(self, *args, **kwargs):
         pre_init.send(type(self), instance=self)
         self._validate_errors = {}  # eg: {'field_name': 'error information'}
         super().__init__(*args, **kwargs)
         self.delete = self._delete
+
+    @classmethod
+    def create(cls, **query):
+        """
+        secure create, mass assignment protected
+        """
+        return super().create(**cls._filter_attrs(query))
+
+    def update_with(self, **query):
+        """
+        secure update, mass assignment protected
+        """
+        for k, v in self._filter_attrs(query).items():
+            setattr(self, k, v)
+        return self.save()
+
+    @classmethod
+    def _filter_attrs(cls, attrs):
+        """
+        attrs: { attr_name: attr_value }
+        if __attr_whitelist__ is True:
+            only attr in __attr_accessible__ AND not in __attr_protected__
+            will pass
+        else:
+            only attr not in __attr_protected__ OR in __attr_accessible__
+            will pass
+        """
+        if cls.__attr_whitelist__:
+            whitelist = cls.__attr_accessible__ - cls.__attr_protected__
+            return {k: v for k, v in attrs.items() if k in whitelist}
+        else:
+            blacklist = cls.__attr_protected__ - cls.__attr_accessible__
+            return {k: v for k, v in attrs.items() if k not in blacklist}
 
     def save(self, *args, **kwargs):
         skip_validation = kwargs.pop('skip_validation', False)
@@ -66,7 +103,7 @@ class Model(pw.Model, metaclass=ModelMeta):
                 else:
                     fk_model.delete().where(query).execute()
         ret = model.delete().where(self._pk_expr()).execute()
-        post_delete.send(type(self), instance=self)
+        post_delete.send(model, instance=self)
         return ret
 
     def _delete(self, *args, **kwargs):
