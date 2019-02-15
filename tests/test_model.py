@@ -63,6 +63,27 @@ class MyNotebook(pwmysql.Model):
     note = peewee.ForeignKeyField(MyNote, backref='notes', null=True)
 
 
+class MassAssignment1(pwdb.Model):
+    __attr_whitelist__ = True
+    __attr_accessible__ = {'f1', 'f2', 'f3'}
+    __attr_protected__ = {'f3', 'f4'}
+
+    f1 = peewee.IntegerField(default=1)
+    f2 = peewee.IntegerField(default=2)
+    f3 = peewee.IntegerField(default=3)
+    f4 = peewee.IntegerField(default=4)
+
+
+class MassAssignment2(pwdb.Model):
+    __attr_accessible__ = {'f1', 'f2', 'f3'}
+    __attr_protected__ = {'f3', 'f4'}
+
+    f1 = peewee.IntegerField(default=1)
+    f2 = peewee.IntegerField(default=2)
+    f3 = peewee.IntegerField(default=3)
+    f4 = peewee.IntegerField(default=4)
+
+
 @pytest.fixture
 def table():
     Note.create_table()
@@ -292,3 +313,52 @@ def test_json_field_sqlite(json_field_models):
 
 def test_json_field_mysql(json_field_models):
     json_field_test(MyCategory)
+
+
+@pytest.fixture
+def massassignment_models():
+    MassAssignment1.create_table()
+    MassAssignment2.create_table()
+    yield
+    MassAssignment1.drop_table()
+    MassAssignment2.drop_table()
+
+
+def test_massassignment(massassignment_models):
+    m1 = MassAssignment1.create(f1=10, f2=10, f3=10, f4=10)
+    assert m1.f1 == 10
+    assert m1.f3 == 3
+    assert m1.f4 == 4
+
+    m1.update_with(f1=20, f2=20, f3=20, f4=20)
+    assert m1.f1 == 20
+    assert m1.f3 == 3
+    assert m1.f4 == 4
+
+    m1.f3 = 30
+    m1.save()
+    assert m1.f3 == 30
+
+    m1 = MassAssignment1.get_by_id(m1.id)
+    assert m1.f1 == 20
+    assert m1.f3 == 30
+    assert m1.f4 == 4
+
+    m2 = MassAssignment2.create(f1=10, f2=10, f3=10, f4=10)
+    assert m2.f1 == 10
+    assert m2.f3 == 10
+    assert m2.f4 == 4
+
+    m2.update_with(f1=20, f2=20, f3=20, f4=20)
+    assert m2.f1 == 20
+    assert m2.f3 == 20
+    assert m2.f4 == 4
+
+    m2.f4 = 30
+    m2.save()
+    assert m2.f4 == 30
+
+    m2 = MassAssignment2.get_by_id(m2.id)
+    assert m2.f1 == 20
+    assert m2.f3 == 20
+    assert m2.f4 == 30
