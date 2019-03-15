@@ -135,8 +135,8 @@ def test_validator(table):
     assert inspect.ismethod(note.validate_message)
 
     note.message = 'raise error'
-    assert not note.is_valid
-    assert len(note.errors) > 0
+    assert not note._is_valid
+    assert len(note._errors) > 0
     with pytest.raises(val.ValidationError):
         note.save()
     note.save(skip_validation=True)

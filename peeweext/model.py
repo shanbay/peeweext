@@ -79,7 +79,7 @@ class Model(pw.Model, metaclass=ModelMeta):
     def save(self, *args, **kwargs):
         skip_validation = kwargs.pop('skip_validation', False)
         if not skip_validation:
-            if not self.is_valid:
+            if not self._is_valid:
                 raise ValidationError(str(self._validate_errors))
 
         pk_value = self._pk
@@ -128,13 +128,13 @@ class Model(pw.Model, metaclass=ModelMeta):
         self._validate_errors = errors
 
     @property
-    def errors(self):
+    def _errors(self):
         self._validate()
         return self._validate_errors
 
     @property
-    def is_valid(self):
-        return not self.errors
+    def _is_valid(self):
+        return not self._errors
 
 
 def _touch_model(sender, instance, created):
