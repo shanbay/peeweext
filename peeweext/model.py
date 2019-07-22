@@ -25,7 +25,7 @@ class ModelMeta(pw.ModelBase):
         for k, v in attrs.items():
             if k.startswith('validate_') and inspect.isfunction(v):
                 fn = k[9:]  # 9 = len('validate_')
-                if fn in cls._meta.fields:
+                if fn in cls._meta.combined:
                     cls._validators[fn] = v
 
 
