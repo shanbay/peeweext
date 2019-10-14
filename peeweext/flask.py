@@ -8,10 +8,10 @@ class Peeweext:
 
     def init_app(self, app):
         config = app.config.get_namespace(self.ns)
-        conn_params = config.get('conn_params', {})
-        self.database = db_url.connect(config['db_url'], **conn_params)
         self.model_class = import_string(
             config.get('model', 'peeweext.model.Model'))
+        conn_params = config.get('conn_params', {})
+        self.database = db_url.connect(config['db_url'], **conn_params)
         self._register_handlers(app)
 
     @cached_property

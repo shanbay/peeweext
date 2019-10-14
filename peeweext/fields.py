@@ -3,9 +3,12 @@ import datetime
 import peewee as pw
 import pendulum
 
+pw.MySQLDatabase.field_types.update({'DATETIME': 'DATETIME(6)'})
+pw.PostgresqlDatabase.field_types.update({'DATETIME': 'TIMESTAMPTZ'})
+
 
 class DatetimeTZField(pw.Field):
-    field_type = 'DATETIME(6)'
+    field_type = 'DATETIME'
 
     def python_value(self, value):
         if isinstance(value, str):
