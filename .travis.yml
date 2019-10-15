@@ -1,19 +1,29 @@
 language: python
 cache: pip
 python:
-  - "3.5"
-  - "3.6"
+- '3.5'
+- '3.6'
+- '3.7'
 install:
-  - pip install -r test-requirements.txt -U
+- pip install -r test-requirements.txt -U
 services:
-  - postgresql
-  - mysql
+- postgresql
+- mysql
 script:
-  - flake8 peeweext
-  - pytest tests
+- flake8 peeweext
+- pytest tests
 before_script:
-  - psql -c 'create database peeweext;' -U postgres
-  - mysql -u root -e 'create database peeweext;'
+- psql -c 'create database peeweext;' -U postgres
+- mysql -u root -e 'create database peeweext;'
 after_success:
-  - CODECLIMATE_REPO_TOKEN=4fcbb961dd78da843c233538e7a37f432e48980a600f96cbd8b2967fbc008c79 codeclimate-test-reporter
-  - coveralls
+- CODECLIMATE_REPO_TOKEN=4fcbb961dd78da843c233538e7a37f432e48980a600f96cbd8b2967fbc008c79
+  codeclimate-test-reporter
+- coveralls
+deploy:
+  provider: pypi
+  distributions: bdist_wheel
+  user: __token__
+  password:
+    secure: hu35cN8vKU6tlp8Bun6dgVlgKsD1dxEs+k8rEOSrafp3IY841j37rb2/A5f3VPwJI+rxbevpUKsPWALNLtgiMIJEAPPq678FAHiqZScx4wMNRqQhJsC+om7X1TALvr9RepwIPb8VpUwsIxQLSPDmoQlp971OxzsLZf3dk/B9W/7HRZHpMfgAdB8vDnHCD2Y7P7jRDkd1u0+4TOC/6kpyTOsK25eJLqH4gHw9PPzXtYvxNMvRS+DPB5Q/Oq3TN58nkgDwlACIQ2UxbW/jmgf0a3mUZ+uVApRjtAgbnon7VE/CRXkL//6ojB2aj6kbAZq4XQ7XIDskCKroeKeXvK7K85VnEOV5hvh0tNYrIE4UDvMYrvFOFONxmP+Lf/FYHQ3pew0iNnBwumgNsEoW8tMBN1FHuIuglKf2JQGqDIkt7ArlMODbw79dqtvfudn5wW9y7mnU4n6fCUsj1PE9Vy6z7Cd+U0QntlXWYfMyWhhMT9rb3yiK7PAGqxeE7rnHWgLtJssnZ5a4eRLy5E9kdaWUd8gQm2kC9dFoJk4dAPgnhSz8NDwNAEL+XW09Kteu1fZNYWmbe/UfTn/UK0Ky8fAY7qkAFAJKPQDP4/ZY4DM/dx55aO0TzFpKW5MxzMiqsTwUZQ/km199zg00guFNw1gRB9Wl/SB7kLtVV93037FJmt4=
+  on:
+    tags: true
