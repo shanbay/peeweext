@@ -4,8 +4,12 @@ import peewee as pw
 import pendulum
 
 
-pw.MySQLDatabase.field_types.update({'DATETIME': 'DATETIME(6)'})
-pw.PostgresqlDatabase.field_types.update({'DATETIME': 'TIMESTAMPTZ'})
+def patch_datetime_type():
+    pw.MySQLDatabase.field_types.update({'DATETIME': 'DATETIME(6)'})
+    pw.PostgresqlDatabase.field_types.update({'DATETIME': 'TIMESTAMPTZ'})
+
+
+patch_datetime_type()
 
 
 class DatetimeTZField(pw.Field):
