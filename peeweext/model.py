@@ -79,8 +79,9 @@ class Model(pw.Model, metaclass=ModelMeta):
     def save(self, *args, **kwargs):
         skip_validation = kwargs.pop('skip_validation', False)
         if not skip_validation:
-            if not self._is_valid:
-                raise ValidationError(str(self._validate_errors))
+            errors = self._validate(only=kwargs.get("only"))
+            if errors:
+                raise ValidationError(str(errors))
 
         pk_value = self._pk
         created = kwargs.get('force_insert', False) or not bool(pk_value)
@@ -112,12 +113,25 @@ class Model(pw.Model, metaclass=ModelMeta):
             "delete_instance()"
         )
 
-    def _validate(self):
+    def _validate(self, only=None):
         """Validate model data and save errors
         """
         errors = {}
 
-        for name, validator in self._validators.items():
+        if only:
+            items = []
+            for field in only:
+                if isinstance(field, pw.basestring):
+                    name = field
+                else:
+                    name = field.name
+                validator = self._validators.get(name)
+                if validator:
+                    items.append((name, validator))
+        else:
+            items = self._validators.items()
+
+        for name, validator in items:
             value = getattr(self, name)
 
             try:
@@ -125,16 +139,7 @@ class Model(pw.Model, metaclass=ModelMeta):
             except ValidationError as e:
                 errors[name] = str(e)
 
-        self._validate_errors = errors
-
-    @property
-    def _errors(self):
-        self._validate()
-        return self._validate_errors
-
-    @property
-    def _is_valid(self):
-        return not self._errors
+        return errors
 
 
 def _touch_model(sender, instance, created):
