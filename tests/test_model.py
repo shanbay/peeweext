@@ -135,14 +135,16 @@ def test_validator(table):
     assert inspect.ismethod(note.validate_message)
 
     note.message = 'raise error'
-    assert not note._is_valid
-    assert len(note._errors) > 0
+    note.published_at = pendulum.now()
+    assert len(note._validate()) > 0
     with pytest.raises(val.ValidationError):
         note.save()
+    # equivalent expressions for skip validate "message"
     note.save(skip_validation=True)
+    note.save(only=[Note.published_at])
+    note.save(only=["published_at"])
 
     note.message = 'message'
-    note._validate()
     note.save()
     assert note.message == Note.get_by_id(note.id).message
     # with validates decorator
