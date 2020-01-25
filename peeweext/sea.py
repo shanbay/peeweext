@@ -45,7 +45,9 @@ class Peeweext:
                 lambda *arg, **kw: self.close_db(), weak=False)
         except ImportError:
             pass
-
+    
+    def __getattr__(self, item):
+        return getattr(self.database, item)
 
 class PeeweextMiddleware(BaseMiddleware):
     def __init__(self, app, handler, origin_handler):
