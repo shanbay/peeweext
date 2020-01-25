@@ -46,8 +46,8 @@ class Peeweext:
         except ImportError:
             pass
     
-    def __getattr__(self, item):
-        return getattr(self.database, item)
+    def __getattr__(self, name):
+        return getattr(self.database, name)
 
 class PeeweextMiddleware(BaseMiddleware):
     def __init__(self, app, handler, origin_handler):
