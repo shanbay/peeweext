@@ -1,4 +1,4 @@
-from werkzeug import import_string, cached_property
+from werkzeug.utils import import_string, cached_property
 from playhouse import db_url
 
 
