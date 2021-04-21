@@ -7,5 +7,5 @@ codeclimate-test-reporter
 coverage
 flask
 sea
-psycopg2
+psycopg2-binary
 mysqlclient
