@@ -36,10 +36,14 @@ class DatetimeTZField(pw.Field):
 
 
 class JSONCharField(pw.CharField):
+    def __init__(self, ensure_ascii=True, *args, **kwargs):
+        self.ensure_ascii = ensure_ascii
+        super(JSONCharField, self).__init__(*args, **kwargs)
+
     def db_value(self, value):
         if value is None:
             return value
-        data = json.dumps(value)
+        data = json.dumps(value, ensure_ascii=self.ensure_ascii)
         if len(data) > self.max_length:
             raise ValueError('Data too long for field {}.'.format(self.name))
         return data

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.2.3] - 2021-04-21
+
+- ensure_ascii is provided in JSONCharField to support storing Chinese in non-ascii way
+
 ## [1.1.0] - 2019-02-15
 
 ### added
