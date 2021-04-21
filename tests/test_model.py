@@ -5,6 +5,7 @@ import pendulum
 import datetime
 from io import StringIO
 import inspect
+import json
 
 from peeweext.fields import JSONCharField
 from peeweext import validation as val
@@ -51,12 +52,14 @@ class Category(pwdb.Model):
     id = peewee.AutoField()
     content = JSONCharField(max_length=128, default={})
     remark = JSONCharField(max_length=128, null=True)
+    title = JSONCharField(max_length=128, null=True, ensure_ascii=False)
 
 
 class MyCategory(pwmysql.Model):
     id = peewee.AutoField()
     content = JSONCharField(max_length=128, default={})
     remark = JSONCharField(max_length=128, null=True)
+    title = JSONCharField(max_length=128, null=True, ensure_ascii=False)
 
 
 class MyNotebook(pwmysql.Model):
@@ -281,6 +284,20 @@ def json_field_test(CategoryModel):
     with pytest.raises(ValueError) as exc:
         CategoryModel.create(content=list(range(10000)))
         assert exc.args[0] == 'Data too long for field content.'
+    
+    # Create normal-length Chinese, but an error will be reported when ensure_ascii = True
+    with pytest.raises(ValueError) as exc:
+        items = ["测" * 100]
+        assert len(json.dumps(items)) > 128
+        assert len(json.dumps(items, ensure_ascii=False)) < 128
+
+        # ensure_ascii = True, create failed
+        category = CategoryModel.create(content=items)
+        assert exc.args[0] == 'Data too long for field content.'
+
+        # ensure_ascii = False, create successfully
+        CategoryModel.create(title=items)
+        assert category.title == ["测" * 100]
 
     # Update by save
     category.content = [1, 2]
