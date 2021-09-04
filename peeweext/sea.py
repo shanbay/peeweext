@@ -1,4 +1,5 @@
 from sea.utils import import_string, cached_property
+from sea.local import Proxy
 from sea.middleware import BaseMiddleware
 from sea.pb2 import default_pb2
 from playhouse import db_url
@@ -20,11 +21,14 @@ class Peeweext:
         self.database = db_url.connect(config['db_url'], **conn_params)
         self._try_setup_celery()
 
+    def _get_db(self):
+        return self.database
+
     @cached_property
     def Model(self):
         class BaseModel(self.model_class):
             class Meta:
-                database = self.database
+                database = Proxy(self._get_db)
 
         return BaseModel
 
