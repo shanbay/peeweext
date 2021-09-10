@@ -3,20 +3,32 @@ from werkzeug.utils import import_string, cached_property
 from playhouse import db_url
 
 
+class UninitializedException(Exception):
+    pass
+
+
 class Peeweext:
     def __init__(self, ns='PW_'):
         self.ns = ns
+        self._database = None
+        # make a connection pool proxy
+        self.database = LocalProxy(self._get_db)
 
     def init_app(self, app):
         config = app.config.get_namespace(self.ns)
         self.model_class = import_string(
             config.get('model', 'peeweext.model.Model'))
         conn_params = config.get('conn_params', {})
-        self.database = db_url.connect(config['db_url'], **conn_params)
+
+        # initialize private connection pool
+        self._database = db_url.connect(config['db_url'], **conn_params)
+
         self._register_handlers(app)
 
     def _get_db(self):
-        return self.database
+        if not self._database:
+            raise UninitializedException()
+        return self._database
 
     @cached_property
     def Model(self):
