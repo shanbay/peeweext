@@ -1,6 +1,7 @@
-from werkzeug.local import LocalProxy
 from werkzeug.utils import import_string, cached_property
 from playhouse import db_url
+
+from peeweext.proxy import Proxy
 
 
 class UninitializedException(Exception):
@@ -12,7 +13,7 @@ class Peeweext:
         self.ns = ns
         self._database = None
         # make a connection pool proxy
-        self.database = LocalProxy(self._get_db)
+        self.database = Proxy(self._get_db)
 
     def init_app(self, app):
         config = app.config.get_namespace(self.ns)
@@ -34,7 +35,9 @@ class Peeweext:
     def Model(self):
         class BaseModel(self.model_class):
             class Meta:
-                database = LocalProxy(self._get_db)
+                # 为什么这里不直接使用当前实例的_database而是用了proxy？
+                # 是为了使Meta.database始终和实例的_database保持一致
+                database = Proxy(self._get_db)
 
         return BaseModel
 
