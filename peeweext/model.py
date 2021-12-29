@@ -85,6 +85,9 @@ class Model(pw.Model, metaclass=ModelMeta):
 
         pk_value = self._pk
         created = kwargs.get('force_insert', False) or not bool(pk_value)
+        if not created and kwargs.get("only"):
+            # update `updated_at` field implicitly when using the `only` option
+            kwargs["only"].append("updated_at")
         pre_save.send(type(self), instance=self, created=created)
         ret = super().save(*args, **kwargs)
         post_save.send(type(self), instance=self, created=created)
