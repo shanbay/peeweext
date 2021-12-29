@@ -144,8 +144,18 @@ def test_validator(table):
         note.save()
     # equivalent expressions for skip validate "message"
     note.save(skip_validation=True)
+
+    old_updated_at = Note.get_by_id(note.id).updated_at
     note.save(only=[Note.published_at])
     note.save(only=["published_at"])
+    assert Note.get_by_id(note.id).updated_at > old_updated_at
+
+    old_updated_at = Note.get_by_id(note.id).updated_at
+    note.message = "try to update"
+    note.save(only=[Note.message, Note.updated_at])
+    latest_note = Note.get_by_id(note.id)
+    assert latest_note.message == note.message
+    assert latest_note.updated_at > old_updated_at
 
     note.message = 'message'
     note.save()
