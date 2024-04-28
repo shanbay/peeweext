@@ -4,15 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.2.7] - 2024-04-28
+
+- Add MySQLClientInstrumentor used to automatic tracing the requests from mysqlClient, the `instrument()` method should be invoked before `connect()`.
+
 ## [1.2.6] - 2021-12-29
 
 - Update `updated_at` field implicitly when updating with the `only` option.
+
 ```
 some_record.a_field = "updatede a field"
 # updated fields: a_field, updated_at
 some_record.save(only=["a_field"])
 ```
-
 
 ## [1.2.3] - 2021-04-21
 
