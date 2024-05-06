@@ -1,6 +1,7 @@
 from werkzeug.local import LocalProxy
 from werkzeug.utils import import_string, cached_property
 from playhouse import db_url
+from opentelemetry import trace
 from opentelemetry.instrumentation.mysqlclient import MySQLClientInstrumentor
 
 
@@ -21,7 +22,10 @@ class Peeweext:
             config.get('model', 'peeweext.model.Model'))
         conn_params = config.get('conn_params', {})
 
-        MySQLClientInstrumentor().instrument()
+        if app.config.get_namespace("OTEL_").get("enable", False):
+            MySQLClientInstrumentor().instrument(
+                tracer_provider=trace.get_tracer_provider()
+            )
         # initialize private connection pool
         self._database = db_url.connect(config['db_url'], **conn_params)
 
