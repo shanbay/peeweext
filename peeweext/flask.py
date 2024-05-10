@@ -1,7 +1,7 @@
 from werkzeug.local import LocalProxy
 from werkzeug.utils import import_string, cached_property
 from playhouse import db_url
-from opentelemetry.instrumentation.mysqlclient import MySQLClientInstrumentor
+from .otel import otel_instrument
 
 
 class UninitializedException(Exception):
@@ -21,7 +21,7 @@ class Peeweext:
             config.get('model', 'peeweext.model.Model'))
         conn_params = config.get('conn_params', {})
 
-        MySQLClientInstrumentor().instrument()
+        otel_instrument(app)
         # initialize private connection pool
         self._database = db_url.connect(config['db_url'], **conn_params)
 
