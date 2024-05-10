@@ -5,26 +5,21 @@ from sea.pb2 import default_pb2
 from playhouse import db_url
 from peewee import DoesNotExist, DataError
 import grpc
-from opentelemetry import trace
-from opentelemetry.instrumentation.mysqlclient import MySQLClientInstrumentor
-
+from .otel import otel_instrument
 from .validation import ValidationError
 
 
 class Peeweext:
-    def __init__(self, ns="PW_"):
+    def __init__(self, ns='PW_'):
         self.ns = ns
 
     def init_app(self, app):
         config = app.config.get_namespace(self.ns)
         self.model_class = import_string(
-            config.get("model", "peeweext.model.Model"))
-        conn_params = config.get("conn_params", {})
-        if app.config.get_namespace("OTEL_").get("enable", False):
-            MySQLClientInstrumentor().instrument(
-                tracer_provider=trace.get_tracer_provider()
-            )
-        self.database = db_url.connect(config["db_url"], **conn_params)
+            config.get('model', 'peeweext.model.Model'))
+        conn_params = config.get('conn_params', {})
+        otel_instrument(app)
+        self.database = db_url.connect(config['db_url'], **conn_params)
         self._try_setup_celery()
 
     def _get_db(self):
@@ -49,7 +44,6 @@ class Peeweext:
     def _try_setup_celery(self):
         try:
             from celery.signals import task_prerun, task_postrun
-
             task_prerun.connect(
                 lambda *arg, **kw: self.connect_db(), weak=False)
             task_postrun.connect(
@@ -80,7 +74,7 @@ class PeeweextMiddleware(BaseMiddleware):
             return self.handler(servicer, request, context)
         except DoesNotExist:
             context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details("Record Not Found")
+            context.set_details('Record Not Found')
         except (ValidationError, DataError) as e:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details(str(e))
