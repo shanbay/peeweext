@@ -1,4 +1,5 @@
 peewee
 pendulum>=2.0.0
 blinker
-opentelemetry.instrumentation.mysqlclient
+opentelemetry-instrumentation-pymysql
+opentelemetry-instrumentation-mysqlclient

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.2.8] - 2024-05-15
+
+- Compatible with both MySQLClient and PyMySQL
+
 ## [1.2.7] - 2024-04-28
 
 - Add MySQLClientInstrumentor used to automatic tracing the requests from mysqlClient, the `instrument()` method should be invoked before `connect()`.
