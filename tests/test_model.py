@@ -186,6 +186,38 @@ def test_validator(table):
     note.save()
 
 
+class _PeeweeWithoutBasestring:
+    """Proxies to the real `peewee` module but raises AttributeError for
+    `basestring`, mimicking peewee>=4 which dropped that py2-compat alias.
+    Only used to patch the `pw` name inside `peeweext.model`, so peewee's
+    own internals (which still use `basestring` elsewhere on peewee 3.x)
+    are left untouched.
+    """
+
+    def __getattr__(self, name):
+        if name == 'basestring':
+            raise AttributeError(name)
+        return getattr(peewee, name)
+
+
+def test_save_only_without_peewee_basestring(monkeypatch):
+    """Regression test: peewee>=4 removed `peewee.basestring`, which
+    `Model._validate` used to rely on for `save(only=...)`. Confirm it
+    still works for both field-name strings and `Field` objects when that
+    attribute is gone.
+    """
+    monkeypatch.setattr(peeweext.model, 'pw', _PeeweeWithoutBasestring())
+
+    Note.create_table()
+    try:
+        note = Note.create(message='hello')
+        note.published_at = pendulum.now()
+        note.save(only=['published_at'])
+        note.save(only=[Note.published_at])
+    finally:
+        Note.drop_table()
+
+
 def test_instance_delete(table):
     # test delete
     note = Note.create(message='Hello')

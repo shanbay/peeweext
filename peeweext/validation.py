@@ -128,8 +128,12 @@ class URLValidator(RegexValidator):
                 raise
         else:
             # Now verify IPv6 in the netloc part
+            try:
+                netloc = urlsplit(value).netloc
+            except ValueError:  # for example, "Invalid IPv6 URL"
+                raise ValidationError(self.message)
             host_match = re.search(
-                r'^\[(.+)\](?::\d{2,5})?$', urlsplit(value).netloc)
+                r'^\[(.+)\](?::\d{2,5})?$', netloc)
             if host_match:
                 potential_ip = host_match.groups()[0]
                 try:

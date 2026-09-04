@@ -6,6 +6,6 @@ coveralls
 codeclimate-test-reporter
 coverage
 flask
-sea
+sea>=4.0.0
 psycopg2-binary
 mysqlclient

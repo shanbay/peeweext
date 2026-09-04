@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.2.9] - 2026-08-14
+
+- Fix `AttributeError: module 'peewee' has no attribute 'basestring'` raised by `Model.save(only=[...])` on peewee>=4, which dropped the py2-compat `basestring` alias.
+- Fix `Model.delete_instance(recursive=True)` failing with a foreign key constraint error: nullable FK dependents were never discovered (and thus never nulled out) because `search_nullable` was incorrectly tied to `delete_nullable`.
+- Fix `URLValidator` raising an uncaught `ValueError` (instead of `ValidationError`) for malformed bracketed IPv6 hosts like `[::1:2::3]` on Python 3.9+.
+
 ## [1.2.8] - 2024-05-15
 
 - Compatible with both MySQLClient and PyMySQL
